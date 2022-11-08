@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j
 import mu.KotlinLogging
 import org.springframework.dao.EmptyResultDataAccessException
 import org.springframework.http.HttpStatus.*
+import org.springframework.web.bind.MissingRequestValueException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -15,6 +16,13 @@ class RestExceptionHandler {
     @ExceptionHandler(EmptyResultDataAccessException::class)
     @ResponseStatus(NOT_FOUND)
     fun handleNotFoundException(e: Exception): String? {
+        return e.message
+    }
+
+    @ExceptionHandler(MissingRequestValueException::class)
+    @ResponseStatus(BAD_REQUEST)
+    fun handle(e: Exception): String? {
+        logger.error("Bad request - missing request value", e)
         return e.message
     }
 

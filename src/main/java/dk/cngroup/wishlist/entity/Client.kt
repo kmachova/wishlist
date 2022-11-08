@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference
 import org.hibernate.annotations.Formula
 import org.hibernate.annotations.Where
 import org.springframework.data.jpa.repository.EntityGraph
+import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 import org.springframework.data.rest.core.annotation.RestResource
 import javax.persistence.*
@@ -11,16 +12,16 @@ import javax.persistence.*
 @Entity //all SELECT statements will be enhanced by given where condition; cannot be inherited from parent class
 @Where(clause = "active = true")
 class Client(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Long? = null,
-    var active: Boolean = true,
-    val firstName: String,
-    val lastName: String,
-    @JsonManagedReference
-    @OneToMany(mappedBy = "client", cascade = [CascadeType.ALL])
-    @OrderColumn
-    val wishes: MutableList<Wishlist> = mutableListOf()
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        var id: Long? = null,
+        var active: Boolean = true,
+        val firstName: String,
+        val lastName: String,
+        @JsonManagedReference
+        @OneToMany(mappedBy = "client", cascade = [CascadeType.ALL])
+        @OrderColumn
+        val wishes: MutableList<Wishlist> = mutableListOf()
 ) {
     @Formula("upper(concat(first_name, '_', last_name))")
     val userName: String? = null
@@ -41,4 +42,8 @@ interface ClientRepository : CrudRepository<Client, Long> {
 
     @EntityGraph(attributePaths = ["wishes.products"])
     fun findClientByUserName(userName: String): Client
+
+    //@Query(value = "SELECT DISTINCT c FROM Client c JOIN c.wishes w JOIN w.products p WHERE p.code = ?1 ORDER BY c.userName")
+    @EntityGraph(attributePaths = ["wishes.products"])
+    fun findDistinctByWishesProductsCodeOrderByUserName(productCode: String): List<Client>?
 }

@@ -27,4 +27,8 @@ public class FetchTest {
         clientRepository.findClientByUserName("DARTH_VADER");
     }
 
+    @Test
+    public void ClientsByOrder(){
+        clientRepository.findDistinctByWishesProductsCodeOrderByUserName("randomCode");
+    }
 }
