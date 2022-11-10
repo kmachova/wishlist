@@ -1,9 +1,12 @@
 package dk.cngroup.wishlist
 
+import dk.cngroup.wishlist.entity.ClientRepository
+import dk.cngroup.wishlist.entity.ProductRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.MissingServletRequestParameterException
 import spock.lang.Specification
 
@@ -11,18 +14,30 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson
 
+@Transactional
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
-class ClientControllerSearchSpec extends Specification {
+class ClientControllerSearchSpec extends Specification implements DBTestData {
 
     @Autowired
     private MockMvc mockMvc
 
+    @Autowired
+    private ClientRepository clientRepository
+
+    @Autowired
+    private ProductRepository productRepository
+
     private static final PRODUCT_CODE_PARAM = 'productCode'
     private static final CLIENTS_SEARCH_PATH = '/clients/search'
+    private static final PRODUCT_CODE_IN_ALL_LISTS = 'Death Star'
 
     def 'should return correct number of clients: #expectedClientCount'() {
+        given:
+        fullSetup(clientRepository, productRepository)
+
         when:
         def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
                 .queryParam(PRODUCT_CODE_PARAM, productCode))
@@ -37,16 +52,37 @@ class ClientControllerSearchSpec extends Specification {
         0                   | 'sand'
         1                   | 'TIE Fighter'
         2                   | 'Star Destroyer'
-        3                   | 'Death Star'
+        3                   | PRODUCT_CODE_IN_ALL_LISTS
     }
 
-    def 'clients should be sorted by their username'() {
-        given: 'product in wishlists of 3 clients'
-        def productCode = 'Death Star'
+    def 'should return clients in correct format'() {
+        given:
+        oneClientWithWishesSetup(clientRepository)
+        def expectedResponse = new File('src/test/resources/responses/DarthVaderWithWishlists.json').text
 
         when:
         def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
-                .queryParam(PRODUCT_CODE_PARAM, productCode))
+                .queryParam(PRODUCT_CODE_PARAM, PRODUCT_CODE_IN_ALL_LISTS))
+
+        then:
+        def response = results
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString()
+
+        and:
+        assertThatJson(response)
+                .isEqualTo(expectedResponse)
+    }
+
+    def 'clients should be sorted by their username'() {
+        given:
+        fullSetup(clientRepository, productRepository)
+
+        when:
+        def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
+                .queryParam(PRODUCT_CODE_PARAM, PRODUCT_CODE_IN_ALL_LISTS))
 
         then:
         results
@@ -56,20 +92,18 @@ class ClientControllerSearchSpec extends Specification {
                 .andExpect(jsonPath('$[2].userName').value('LUKE_SKYWALKER'))
     }
 
-    def 'should return empty result when productCode param is #name'() {
+    def 'should return empty result when productCode param does not exist'() {
+        given:
+        def nonExistingProductCode = 'non-exist code 34856453'
+
         when:
         def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
-                .queryParam(PRODUCT_CODE_PARAM, productCode))
+                .queryParam(PRODUCT_CODE_PARAM, nonExistingProductCode))
 
         then:
         results
                 .andExpect(status().isOk())
                 .andExpect(jsonPath('$').isEmpty())
-
-        where:
-        name             | productCode
-        'empty'          | ''
-        'non-existing'   | 'non-exist code'
     }
 
     def 'should fail when productCode param is #name'() {

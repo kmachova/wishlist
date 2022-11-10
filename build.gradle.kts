@@ -45,6 +45,10 @@ dependencies {
     testImplementation("org.spockframework:spock-spring:2.3-groovy-3.0")
     testImplementation("org.hamcrest:hamcrest-core:2.2")   // only necessary if Hamcrest matchers are used
     testRuntimeOnly("net.bytebuddy:byte-buddy:1.12.18") // allows mocking of classes (in addition to interfaces)
+
+    testImplementation("net.javacrumbs.json-unit:json-unit:2.36.0")
+    testImplementation("net.javacrumbs.json-unit:json-unit-assertj:2.36.0")
+    implementation("com.github.javafaker:javafaker:0.12")
 }
 
 allOpen {

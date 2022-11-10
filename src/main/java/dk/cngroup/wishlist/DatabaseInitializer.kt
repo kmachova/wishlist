@@ -1,9 +1,11 @@
 package dk.cngroup.wishlist
 
+import com.github.javafaker.Faker
 import dk.cngroup.wishlist.entity.*
 import lombok.RequiredArgsConstructor
 import org.springframework.boot.CommandLineRunner
 import org.springframework.stereotype.Component
+import java.util.*
 
 @Component
 @RequiredArgsConstructor
@@ -12,27 +14,20 @@ class DatabaseInitializer(
     private val productRepository: ProductRepository
 ) : CommandLineRunner {
     override fun run(vararg args: String) {
-        val tieFighter = Product(code = "TIE Fighter")
-        val deathStar = Product(code = "Death Star")
-        val starDestroyer = Product(code = "Star Destroyer")
-        val sand = Product(code = "sand")
+        val faker = Faker()
 
-        val wishlist3Products = Wishlist(products = arrayListOf(deathStar, starDestroyer, tieFighter))
-        val wishlist2Products = Wishlist(products = arrayListOf(deathStar, starDestroyer))
-        val wishlist1Product = Wishlist(products = arrayListOf(deathStar))
+        repeat(5) {
+            val product = Product(code = faker.space().star())
+            productRepository.save(product)
+        }
 
+        repeat(10) {
+            val nProducts = (0..10).random()
+            val products = (1..nProducts).map { Product(code = faker.space().planet()) }.toMutableList()
 
-        val vader = Client(firstName = "Darth", lastName = "Vader")
-        vader.addWishlist(wishlist3Products)
-
-        val ren = Client(firstName = "Kylo", lastName = "Ren")
-        ren.addWishlist(wishlist2Products)
-
-        val skywalker = Client(firstName = "Luke", lastName = "Skywalker")
-        skywalker.addWishlist(wishlist1Product)
-
-        productRepository.save(sand)
-        clientRepository.saveAll(arrayListOf(vader, skywalker, ren))
-
+            val client = Client(firstName = faker.address().firstName(), lastName = faker.address().lastName())
+            client.addWishlist(Wishlist(products = products))
+            clientRepository.save(client)
+        }
     }
 }
