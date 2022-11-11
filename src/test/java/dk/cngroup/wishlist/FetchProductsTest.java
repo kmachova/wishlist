@@ -14,6 +14,6 @@ public class FetchProductsTest {
     //check log to see the difference in SQL executed by Hibernate
     @Test
     public void testFindProductByCode() {
-        productRepository.findFirstProductByCode("randomCode");
+        productRepository.findFirstProductByCodeIgnoreCase("randomCode");
     }
 }

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonManagedReference
 import org.hibernate.annotations.Formula
 import org.hibernate.annotations.Where
 import org.springframework.data.jpa.repository.EntityGraph
-import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 import org.springframework.data.rest.core.annotation.RestResource
 import javax.persistence.*
@@ -45,5 +44,5 @@ interface ClientRepository : CrudRepository<Client, Long> {
 
     //@Query(value = "SELECT DISTINCT c FROM Client c JOIN c.wishes w JOIN w.products p WHERE p.code = ?1 ORDER BY c.userName")
     @EntityGraph(attributePaths = ["wishes.products"])
-    fun findDistinctByWishesProductsCodeOrderByUserName(productCode: String): List<Client>?
+    fun findDistinctByWishesProductsCodeIgnoreCaseOrderByUserName(productCode: String): List<Client>?
 }

@@ -1,6 +1,6 @@
 package dk.cngroup.wishlist
 
-import dk.cngroup.wishlist.entity.ProductCodeNotFoundException
+
 import org.springframework.web.bind.MissingServletRequestParameterException
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
@@ -109,6 +109,29 @@ class ClientSearchControllerSpec extends BaseSpec {
         and:
         exception instanceof ProductCodeNotFoundException
         exception.getMessage() == expectedErrorMessage
+    }
+
+    def 'should not consider case of the productCode param ("#productCode")'() {
+        given:
+        vader.addWishlist(wishlist1Product)
+        clientRepository.save(vader)
+
+        when:
+        def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
+                .queryParam(PRODUCT_CODE_PARAM, productCode))
+
+        then:
+        results
+                .andExpect(status().isOk())
+                .andExpect(jsonPath('$', hasSize(1)))
+                .andExpect(jsonPath('$[0].lastName').value('Vader'))
+
+        where:
+        productCode << [PRODUCT_IN_ALL_WISHLISTS,
+                        PRODUCT_IN_ALL_WISHLISTS.toUpperCase(),
+                        PRODUCT_IN_ALL_WISHLISTS.toLowerCase(),
+                        PRODUCT_IN_ALL_WISHLISTS.replace('h', 'H')
+        ]
     }
 
     def 'should fail when productCode param is #name'() {

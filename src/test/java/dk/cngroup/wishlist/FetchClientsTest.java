@@ -29,6 +29,6 @@ public class FetchClientsTest {
 
     @Test
     public void testSearchClientByProduct() {
-        clientRepository.findDistinctByWishesProductsCodeOrderByUserName("randomCode");
+        clientRepository.findDistinctByWishesProductsCodeIgnoreCaseOrderByUserName("randomCode");
     }
 }

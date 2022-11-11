@@ -1,8 +1,8 @@
 package dk.cngroup.wishlist.controller
 
+import dk.cngroup.wishlist.ProductCodeNotFoundException
 import dk.cngroup.wishlist.entity.Client
 import dk.cngroup.wishlist.entity.ClientRepository
-import dk.cngroup.wishlist.entity.ProductCodeNotFoundException
 import dk.cngroup.wishlist.entity.ProductRepository
 import org.springframework.web.bind.annotation.*
 
@@ -17,8 +17,8 @@ class ClientSearchController(
     fun getByProduct(
         @RequestParam productCode: String
     ): List<Client> {
-        productRepository.findFirstProductByCode(productCode) ?: throw ProductCodeNotFoundException(productCode)
+        productRepository.findFirstProductByCodeIgnoreCase(productCode) ?: throw ProductCodeNotFoundException(productCode)
 
-        return clientRepository.findDistinctByWishesProductsCodeOrderByUserName(productCode) ?: emptyList()
+        return clientRepository.findDistinctByWishesProductsCodeIgnoreCaseOrderByUserName(productCode) ?: emptyList()
     }
 }

@@ -49,6 +49,7 @@ dependencies {
     testImplementation("net.javacrumbs.json-unit:json-unit:2.36.0")
     testImplementation("net.javacrumbs.json-unit:json-unit-assertj:2.36.0")
     implementation("com.github.javafaker:javafaker:0.12")
+    implementation("com.opencsv:opencsv:5.2")
 }
 
 allOpen {
