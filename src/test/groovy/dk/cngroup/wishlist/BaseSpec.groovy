@@ -12,6 +12,8 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.transaction.annotation.Transactional
 import spock.lang.Specification
 
+import javax.persistence.EntityManager
+
 @Transactional
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
@@ -25,6 +27,9 @@ class BaseSpec extends Specification {
 
     @Autowired
     ProductRepository productRepository
+
+    @Autowired
+    EntityManager entityManager
 
     protected static final PRODUCT_IN_ALL_WISHLISTS = 'Death Star'
 
@@ -53,5 +58,7 @@ class BaseSpec extends Specification {
         skywalker.addWishlist(wishlist1Product)
         clientRepository.saveAll([vader, ren, skywalker])
         productRepository.save(sand)
+        entityManager.flush()
+        entityManager.clear()
     }
 }
