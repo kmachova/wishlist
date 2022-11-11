@@ -1,15 +1,7 @@
 package dk.cngroup.wishlist
 
-import dk.cngroup.wishlist.entity.ClientRepository
 import dk.cngroup.wishlist.entity.ProductCodeNotFoundException
-import dk.cngroup.wishlist.entity.ProductRepository
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.MissingServletRequestParameterException
-import spock.lang.Specification
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -17,27 +9,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson
 
-@Transactional
-@SpringBootTest
-@AutoConfigureMockMvc(addFilters = false)
-class ClientSearchControllerSpec extends Specification implements DBTestData {
-
-    @Autowired
-    private MockMvc mockMvc
-
-    @Autowired
-    private ClientRepository clientRepository
-
-    @Autowired
-    private ProductRepository productRepository
-
+class ClientSearchControllerSpec extends BaseSpec {
     private static final PRODUCT_CODE_PARAM = 'productCode'
     private static final CLIENTS_SEARCH_PATH = '/clients/search'
-    private static final PRODUCT_CODE_IN_ALL_LISTS = 'Death Star'
 
     def 'should return correct number of clients: #expectedClientCount'() {
         given:
-        fullSetup(clientRepository, productRepository)
+        fullSetup()
 
         when:
         def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
@@ -53,17 +31,19 @@ class ClientSearchControllerSpec extends Specification implements DBTestData {
         0                   | 'sand'
         1                   | 'TIE Fighter'
         2                   | 'Star Destroyer'
-        3                   | PRODUCT_CODE_IN_ALL_LISTS
+        3                   | PRODUCT_IN_ALL_WISHLISTS
     }
 
     def 'should return clients in correct format'() {
         given:
-        oneClientWithWishesSetup(clientRepository)
+        vader.addWishlist(wishlist3Products)
+        clientRepository.save(vader)
+
         def expectedResponse = new File('src/test/resources/responses/DarthVaderWithWishlists.json').text
 
         when:
         def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
-                .queryParam(PRODUCT_CODE_PARAM, PRODUCT_CODE_IN_ALL_LISTS))
+                .queryParam(PRODUCT_CODE_PARAM, PRODUCT_IN_ALL_WISHLISTS))
 
         then:
         def response = results
@@ -77,13 +57,31 @@ class ClientSearchControllerSpec extends Specification implements DBTestData {
                 .isEqualTo(expectedResponse)
     }
 
-    def 'clients should be sorted by their username'() {
-        given:
-        fullSetup(clientRepository, productRepository)
+    def 'single client should be returned only once'() {
+        given: 'client with the same product in multiple wishlists'
+        vader.addWishlist(wishlist1Product)
+        vader.addWishlist(wishlist2Products)
+        vader.addWishlist(wishlist3Products)
+        clientRepository.save(vader)
 
         when:
         def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
-                .queryParam(PRODUCT_CODE_PARAM, PRODUCT_CODE_IN_ALL_LISTS))
+                .queryParam(PRODUCT_CODE_PARAM, PRODUCT_IN_ALL_WISHLISTS))
+
+        then:
+        results
+                .andExpect(status().isOk())
+                .andExpect(jsonPath('$', hasSize(1)))
+                .andExpect(jsonPath('$[0].lastName').value('Vader'))
+    }
+
+    def 'clients should be sorted by their username'() {
+        given:
+        fullSetup()
+
+        when:
+        def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
+                .queryParam(PRODUCT_CODE_PARAM, PRODUCT_IN_ALL_WISHLISTS))
 
         then:
         results
