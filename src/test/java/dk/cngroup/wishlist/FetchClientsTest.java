@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-public class FetchTest {
+public class FetchClientsTest {
 
     @Autowired
     ClientRepository clientRepository;
@@ -28,7 +28,7 @@ public class FetchTest {
     }
 
     @Test
-    public void ClientsByOrder(){
+    public void testSearchClientByProduct() {
         clientRepository.findDistinctByWishesProductsCodeOrderByUserName("randomCode");
     }
 }

@@ -1,6 +1,7 @@
 package dk.cngroup.wishlist
 
 import dk.cngroup.wishlist.entity.ClientRepository
+import dk.cngroup.wishlist.entity.ProductCodeNotFoundException
 import dk.cngroup.wishlist.entity.ProductRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -19,7 +20,7 @@ import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson
 @Transactional
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
-class ClientControllerSearchSpec extends Specification implements DBTestData {
+class ClientSearchControllerSpec extends Specification implements DBTestData {
 
     @Autowired
     private MockMvc mockMvc
@@ -92,18 +93,24 @@ class ClientControllerSearchSpec extends Specification implements DBTestData {
                 .andExpect(jsonPath('$[2].userName').value('LUKE_SKYWALKER'))
     }
 
-    def 'should return empty result when productCode param does not exist'() {
+    def 'should return 404 when productCode param does not exist'() {
         given:
         def nonExistingProductCode = 'non-exist code 34856453'
+        def expectedErrorMessage = "404 NOT_FOUND \"Product code '$nonExistingProductCode' specified in the query parameter does not exist\""
 
         when:
         def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
                 .queryParam(PRODUCT_CODE_PARAM, nonExistingProductCode))
 
         then:
-        results
-                .andExpect(status().isOk())
-                .andExpect(jsonPath('$').isEmpty())
+        def exception = results
+                .andExpect(status().isNotFound())
+                .andReturn()
+                .getResolvedException()
+
+        and:
+        exception instanceof ProductCodeNotFoundException
+        exception.getMessage() == expectedErrorMessage
     }
 
     def 'should fail when productCode param is #name'() {

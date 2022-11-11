@@ -8,6 +8,7 @@ import org.springframework.web.bind.MissingRequestValueException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.server.ResponseStatusException
 
 @RestControllerAdvice
 @Slf4j
@@ -21,9 +22,15 @@ class RestExceptionHandler {
 
     @ExceptionHandler(MissingRequestValueException::class)
     @ResponseStatus(BAD_REQUEST)
-    fun handle(e: Exception): String? {
+    fun handleMissingRequestValue(e: Exception): String? {
         logger.error("Bad request - missing request value", e)
         return e.message
+    }
+
+    @ExceptionHandler(ResponseStatusException::class)
+    fun handleResponseStatusException(e: Exception) {
+        logger.error("Failed with ResponseStatusException.")
+        throw e
     }
 
     @ExceptionHandler(Throwable::class)
