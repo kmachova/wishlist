@@ -12,8 +12,6 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.transaction.annotation.Transactional
 import spock.lang.Specification
-import org.springframework.web.util.UriTemplate
-
 import javax.persistence.EntityManager
 
 @Transactional

@@ -2,7 +2,7 @@ package dk.cngroup.wishlist.service
 
 import com.opencsv.bean.CsvToBean
 import com.opencsv.bean.CsvToBeanBuilder
-import dk.cngroup.wishlist.AllWishesAreInvalidException
+import dk.cngroup.wishlist.InvalidProductCodeInFileException
 import dk.cngroup.wishlist.WishesCsvUpdateException
 import dk.cngroup.wishlist.entity.Product
 import dk.cngroup.wishlist.entity.ProductRepository
@@ -20,9 +20,6 @@ class ReadWishlistService(private val productRepository: ProductRepository) {
     fun getWishlistFromCsv(file: MultipartFile): Wishlist {
         val productsFromFile = getProductsFromFile(file)
         val filteredProducts = filterProducts(productsFromFile)
-        if (filteredProducts.isEmpty()) {
-            throw AllWishesAreInvalidException()
-        }
         return Wishlist(products = filteredProducts)
     }
 
@@ -42,9 +39,8 @@ class ReadWishlistService(private val productRepository: ProductRepository) {
     private fun filterProducts(products: List<Product>): MutableList<Product> {
         return products.map {
             productRepository.findFirstProductByCodeIgnoreCase(it.code)
+                ?: throw InvalidProductCodeInFileException(it.code)
         }
-            .filterNot { it == null }
-            .map { it!! }
             .toMutableList()
     }
 

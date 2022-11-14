@@ -13,9 +13,23 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
     private static final ADD_WISHLIST_TEMPLATE = "/clients/client-management/{username}/addWishlist"
 
     @Shared
+    private final nonExistingProductCode = randomProductCode()
+
+    @Shared
+    private final existingProductCode = FAKER.space().agency()
+
+    @Shared
     private final addWishlistPath = pathFromTemplate(ADD_WISHLIST_TEMPLATE, VADER_USERNAME)
 
-    def 'should fail when no product code is valid: #name'() {
+    def setup() {
+        productRepository.save(createProduct(existingProductCode))
+        clientRepository.save(vader)
+    }
+
+    def 'should fail when some product code is invalid: file with #name'() {
+        given:
+        def expectedErrorMessage = "At least one product code ('$nonExistingProductCode') in the file with the wish list is invalid"
+
         when:
         def results = mockMvc.perform(multipart(addWishlistPath)
                 .file(productCodesCsv))
@@ -27,20 +41,19 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
                 .getResolvedException()
 
         and:
-        exception instanceof AllWishesAreInvalidException
-        exception.message == errorMessage400('Whishlist was not added since it contains invalid product codes only')
+        exception instanceof InvalidProductCodeInFileException
+        exception.message == errorMessage400(expectedErrorMessage)
 
         where:
-        name                          | productCodesCsv
-        'file with one product'       | mockCsvFile(randomProductCode())
-        'file with multiple products' | mockCsvFile(randomProductCode(), randomProductCode(), randomProductCode())
+        name                                | productCodesCsv
+        'one non-existing product'          | mockCsvFile(nonExistingProductCode)
+        'multiple non-existing products'    | mockCsvFile(nonExistingProductCode, randomProductCode(), randomProductCode())
+        'existing and non-existing product' | mockCsvFile(existingProductCode, nonExistingProductCode)
     }
 
     def 'should fail when client does not exist'() {
         given:
         def nonExistingUsername = randomUserName()
-        def existingProductCode = FAKER.space().agency()
-        productRepository.save(createProduct(existingProductCode))
 
         def path = pathFromTemplate(ADD_WISHLIST_TEMPLATE, nonExistingUsername)
         def productCodesCsv = mockCsvFile(existingProductCode)

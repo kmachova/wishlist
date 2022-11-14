@@ -19,7 +19,8 @@ class ClientUsernameNotFoundException(username: String) :
 class ProductCodeNotFoundException(productCode: String) :
     NotFoundException("Product code '$productCode' specified in the query parameter does not exist")
 
-class AllWishesAreInvalidException:  BadRequestException("Whishlist was not added since it contains invalid product codes only")
+class InvalidProductCodeInFileException(productCode: String) :
+    BadRequestException("At least one product code ('$productCode') in the file with the wish list is invalid")
 
 class WishesCsvUpdateException :
     ResponseStatusException(HttpStatus.BAD_REQUEST, "Error in uploading file with wishes")
