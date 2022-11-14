@@ -1,6 +1,5 @@
 package dk.cngroup.wishlist
 
-
 import org.springframework.web.bind.MissingServletRequestParameterException
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
@@ -27,11 +26,11 @@ class ClientSearchControllerSpec extends BaseSpec {
                 .andExpect(jsonPath('$', hasSize(expectedClientCount)))
 
         where:
-        expectedClientCount | productCode
-        0                   | 'sand'
-        1                   | 'TIE Fighter'
-        2                   | 'Star Destroyer'
-        3                   | PRODUCT_IN_ALL_WISHLISTS
+        productCode              || expectedClientCount
+        'sand'                   || 0
+        'TIE Fighter'            || 1
+        'Star Destroyer'         || 2
+        PRODUCT_IN_ALL_WISHLISTS || 3
     }
 
     def 'should return clients in correct format'() {
@@ -108,7 +107,7 @@ class ClientSearchControllerSpec extends BaseSpec {
 
         and:
         exception instanceof ProductCodeNotFoundException
-        exception.getMessage() == expectedErrorMessage
+        exception.message == expectedErrorMessage
     }
 
     def 'should not consider case of the productCode param ("#productCode")'() {
@@ -149,7 +148,7 @@ class ClientSearchControllerSpec extends BaseSpec {
 
         and:
         exception instanceof MissingServletRequestParameterException
-        exception.getMessage() == expectedErrorMessage
+        exception.message == expectedErrorMessage
 
         where:
         name      | path
