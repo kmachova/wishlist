@@ -1,5 +1,6 @@
 package dk.cngroup.wishlist
 
+import com.github.javafaker.Faker
 import dk.cngroup.wishlist.entity.Client
 import dk.cngroup.wishlist.entity.ClientRepository
 import dk.cngroup.wishlist.entity.Product
@@ -11,13 +12,14 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.transaction.annotation.Transactional
 import spock.lang.Specification
+import org.springframework.web.util.UriTemplate
 
 import javax.persistence.EntityManager
 
 @Transactional
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
-class BaseSpec extends Specification {
+class BaseSpec extends Specification implements TestUtils{
 
     @Autowired
     MockMvc mockMvc
@@ -31,9 +33,11 @@ class BaseSpec extends Specification {
     @Autowired
     EntityManager entityManager
 
+    protected static final FAKER = new Faker()
     protected static final PRODUCT_IN_ALL_WISHLISTS = 'Death Star'
+    protected static final VADER_USERNAME = 'DARTH_VADER'
 
-    private createProduct(String code) { new Product(null, code) }
+    protected createProduct(String code) { new Product(null, code) }
 
     private createClient(String firstName, String lastName, List<Wishlist> wishlist = []) {
         new Client(null, true, firstName, lastName, wishlist)
@@ -60,5 +64,13 @@ class BaseSpec extends Specification {
         productRepository.save(sand)
         entityManager.flush()
         entityManager.clear()
+    }
+
+    String randomProductCode() {
+        FAKER.bothify("non-exist code ${'#'.repeat(10)}${'?'.repeat(10)}${'#'.repeat(10)}")
+    }
+
+    String randomUserName() {
+        FAKER.letterify("${'?'.repeat(20)}_${'?'.repeat(10)}", true)
     }
 }

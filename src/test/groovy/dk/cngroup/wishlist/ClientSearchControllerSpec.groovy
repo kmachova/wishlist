@@ -85,15 +85,15 @@ class ClientSearchControllerSpec extends BaseSpec {
         then:
         results
                 .andExpect(status().isOk())
-                .andExpect(jsonPath('$[0].userName').value('DARTH_VADER'))
+                .andExpect(jsonPath('$[0].userName').value(VADER_USERNAME))
                 .andExpect(jsonPath('$[1].userName').value('KYLO_REN'))
                 .andExpect(jsonPath('$[2].userName').value('LUKE_SKYWALKER'))
     }
 
     def 'should return 404 when productCode param does not exist'() {
         given:
-        def nonExistingProductCode = 'non-exist code 34856453'
-        def expectedErrorMessage = "404 NOT_FOUND \"Product code '$nonExistingProductCode' specified in the query parameter does not exist\""
+        def nonExistingProductCode =randomProductCode()
+        def expectedErrorMessage = errorMessage404("Product code '$nonExistingProductCode' specified in the query parameter does not exist")
 
         when:
         def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
