@@ -18,12 +18,12 @@ class ClientService(
         throw ClientUsernameNotFoundException(username)
     }
 
-    fun addWishListToClient(username: String, csv: MultipartFile): Wishlist {
+    fun addWishListToClient(username: String, csv: MultipartFile): Client {
         val wishListFromFile = readWishlistService.getWishlistFromCsv(csv)
         val client = getByUsername(username)
 
         client.addWishlist(wishListFromFile)
         clientRepository.save(client)
-        return wishListFromFile
+        return client
     }
 }

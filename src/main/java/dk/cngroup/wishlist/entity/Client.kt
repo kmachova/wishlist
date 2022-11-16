@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference
 import org.hibernate.annotations.Formula
 import org.hibernate.annotations.Where
 import org.springframework.data.jpa.repository.EntityGraph
-import org.springframework.data.repository.CrudRepository
+import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.rest.core.annotation.RestResource
 import javax.persistence.*
 
@@ -31,7 +31,7 @@ class Client(
     }
 }
 
-interface ClientRepository : CrudRepository<Client, Long> {
+interface ClientRepository : JpaRepository<Client, Long> {
     @RestResource(exported = false)
     fun getByUserName(userName: String): Client?
 

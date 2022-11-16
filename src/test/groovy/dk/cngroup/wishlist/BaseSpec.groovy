@@ -17,7 +17,7 @@ import javax.persistence.EntityManager
 @Transactional
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
-class BaseSpec extends Specification implements TestUtils{
+class BaseSpec extends Specification implements TestUtils {
 
     @Autowired
     MockMvc mockMvc
@@ -35,16 +35,19 @@ class BaseSpec extends Specification implements TestUtils{
     protected static final PRODUCT_IN_ALL_WISHLISTS = 'Death Star'
     protected static final VADER_USERNAME = 'DARTH_VADER'
 
-    protected createProduct(String code) { new Product(null, code) }
+    protected static final VADER_JSON = new File('src/test/resources/responses/DarthVaderWithWishlists.json').text
+
+
+    protected createProduct(String code, String color = null) { new Product(null, code, color) }
 
     private createClient(String firstName, String lastName, List<Wishlist> wishlist = []) {
         new Client(null, true, firstName, lastName, wishlist)
     }
 
-    private def tieFighter = createProduct("TIE Fighter")
-    private def deathStar = createProduct(PRODUCT_IN_ALL_WISHLISTS)
-    private def starDestroyer = createProduct("Star Destroyer")
-    private def sand = createProduct("sand")
+    protected tieFighter = createProduct("TIE Fighter")
+    protected deathStar = createProduct(PRODUCT_IN_ALL_WISHLISTS, 'black')
+    protected starDestroyer = createProduct("Star Destroyer")
+    private sand = createProduct("sand")
 
     protected wishlist3Products = new Wishlist(products: [deathStar, starDestroyer, tieFighter])
     protected wishlist2Products = new Wishlist(products: [deathStar, starDestroyer])
@@ -52,7 +55,7 @@ class BaseSpec extends Specification implements TestUtils{
 
     protected vader = createClient("Darth", "Vader")
     private ren = createClient("Kylo", "Ren")
-    private skywalker = createClient("Luke", "Skywalker")
+    protected skywalker = createClient("Luke", "Skywalker")
 
     def fullSetup() {
         vader.addWishlist(wishlist3Products)

@@ -25,14 +25,12 @@ class ReadWishlistService(private val productRepository: ProductRepository) {
 
     fun getProductsFromFile(file: MultipartFile): List<Product> {
         throwIfFileEmpty(file)
-        var fileReader: BufferedReader? = null
         try {
-            fileReader = BufferedReader(InputStreamReader(file.inputStream))
-            return csvToProducts(fileReader).parse()
+            InputStreamReader(file.inputStream).buffered().use {
+                return csvToProducts(it).parse()
+            }
         } catch (ex: Exception) {
             throw WishesCsvUpdateException()
-        } finally {
-            closeFileReader(fileReader)
         }
     }
 
@@ -49,14 +47,6 @@ class ReadWishlistService(private val productRepository: ProductRepository) {
             .withType(Product::class.java)
             .withIgnoreLeadingWhiteSpace(true)
             .build()
-
-    private fun closeFileReader(fileReader: BufferedReader?) {
-        try {
-            fileReader!!.close()
-        } catch (ex: IOException) {
-            throw WishesCsvUpdateException()
-        }
-    }
 
     private fun throwIfFileEmpty(file: MultipartFile) {
         if (file.isEmpty)

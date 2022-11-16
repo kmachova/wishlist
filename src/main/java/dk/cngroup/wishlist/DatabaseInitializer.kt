@@ -16,7 +16,7 @@ class DatabaseInitializer(
         val faker = Faker()
 
         repeat(5) {
-            val product = Product(code = faker.space().star())
+            val product = Product(code = faker.space().star(), color = faker.color().name())
             productRepository.save(product)
         }
 

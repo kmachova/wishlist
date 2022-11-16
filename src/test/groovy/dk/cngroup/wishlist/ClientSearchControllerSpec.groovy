@@ -35,10 +35,12 @@ class ClientSearchControllerSpec extends BaseSpec {
 
     def 'should return clients in correct format'() {
         given:
+        //productRepository.saveAll([deathStar, starDestroyer, tieFighter])
         vader.addWishlist(wishlist3Products)
         clientRepository.save(vader)
-
-        def expectedResponse = new File('src/test/resources/responses/DarthVaderWithWishlists.json').text
+        //clientRepository.findByUserName(VADER_USERNAME)
+        entityManager.flush()
+        entityManager.clear()
 
         when:
         def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
@@ -52,8 +54,8 @@ class ClientSearchControllerSpec extends BaseSpec {
                 .getContentAsString()
 
         and:
-        assertThatJson(response)
-                .isEqualTo(expectedResponse)
+        assertThatJson(response).isArray().hasSize(1)
+        assertThatJson(response).node('[0]').isEqualTo(VADER_JSON)
     }
 
     def 'single client should be returned only once'() {
@@ -92,7 +94,7 @@ class ClientSearchControllerSpec extends BaseSpec {
 
     def 'should return 404 when productCode param does not exist'() {
         given:
-        def nonExistingProductCode =randomProductCode()
+        def nonExistingProductCode = randomProductCode()
         def expectedErrorMessage = errorMessage404("Product code '$nonExistingProductCode' specified in the query parameter does not exist")
 
         when:

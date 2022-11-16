@@ -1,37 +1,36 @@
-[
-  {
-    "id": "${json-unit.any-number}",
-    "active": true,
-    "firstName": "Darth",
-    "lastName": "Vader",
-    "wishes": [
-      {
-        "id": "${json-unit.any-number}",
-        "products": [
-          {
-            "created": "${json-unit.ignore}",
-            "updated": "${json-unit.ignore}",
-            "createdBy": "system",
-            "id": "${json-unit.any-number}",
-            "code": "Death Star"
-          },
-          {
-            "created": "${json-unit.ignore}",
-            "updated": "${json-unit.ignore}",
-            "createdBy": "system",
-            "id": "${json-unit.any-number}",
-            "code": "Star Destroyer"
-          },
-          {
-            "created": "${json-unit.ignore}",
-            "updated": "${json-unit.ignore}",
-            "createdBy": "system",
-            "id": "${json-unit.any-number}",
-            "code": "TIE Fighter"
-          }
-        ]
-      }
-    ],
-    "userName": null
-  }
-]
+{
+  "id": "${json-unit.any-number}",
+  "active": true,
+  "firstName": "Darth",
+  "lastName": "Vader",
+  "wishes": [
+    {
+      "id": "${json-unit.any-number}",
+      "products": [
+        {
+          "created": "${json-unit.ignore}",
+          "updated": "${json-unit.ignore}",
+          "createdBy": "system",
+          "id": "${json-unit.any-number}",
+          "code": "Death Star",
+          "color": "black"
+        },
+        {
+          "created": "${json-unit.ignore}",
+          "updated": "${json-unit.ignore}",
+          "createdBy": "system",
+          "id": "${json-unit.any-number}",
+          "code": "Star Destroyer"
+        },
+        {
+          "created": "${json-unit.ignore}",
+          "updated": "${json-unit.ignore}",
+          "createdBy": "system",
+          "id": "${json-unit.any-number}",
+          "code": "TIE Fighter"
+        }
+      ]
+    }
+  ],
+  "userName": "DARTH_VADER"
+}

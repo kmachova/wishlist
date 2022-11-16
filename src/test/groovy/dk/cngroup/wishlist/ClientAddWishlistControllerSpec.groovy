@@ -5,7 +5,10 @@ import org.springframework.web.multipart.support.MissingServletRequestPartExcept
 import org.springframework.web.server.ResponseStatusException
 import spock.lang.Shared
 
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 class ClientAddWishlistControllerSpec extends BaseSpec {
@@ -21,9 +24,57 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
     @Shared
     private final addWishlistPath = pathFromTemplate(ADD_WISHLIST_TEMPLATE, VADER_USERNAME)
 
+    private final minimalValidFile = mockCsvFile(existingProductCode)
+
     def setup() {
         productRepository.save(createProduct(existingProductCode))
+    }
+
+    def 'should add wishlist to client'() {
+        given:
         clientRepository.save(vader)
+        productRepository.saveAll([deathStar, starDestroyer, tieFighter])
+        entityManager.flush()
+        entityManager.clear()
+
+        def productCodes = [deathStar.code, starDestroyer.code, tieFighter.code]
+
+        def file = mockCsvFile(*productCodes)
+
+        when:
+        def results = mockMvc.perform(multipart(addWishlistPath)
+                .file(file))
+
+        then:
+        def response = results
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString()
+
+        and: 'wishlist was saved and linked to correct client'
+        clientRepository.findByUserName(VADER_USERNAME)
+                .wishes[0].products.collect { it.code } == productCodes
+
+        and: 'response contains client with new wishlist in correct format'
+        assertThatJson(response)
+                .isEqualTo(VADER_JSON)
+    }
+
+    def 'should not override existing wishlists'() {
+        given: 'client with 2 wishlists'
+        vader.addWishlist(wishlist2Products)
+        vader.addWishlist(wishlist3Products)
+        clientRepository.save(vader)
+
+        when:
+        def results = mockMvc.perform(multipart(addWishlistPath)
+                .file(minimalValidFile))
+
+        then: 'number of wishlists was increased by 1'
+        results
+                .andExpect(status().isOk())
+                .andExpect(jsonPath('$.wishes', hasSize(3)))
     }
 
     def 'should fail when some product code is invalid: file with #name'() {
