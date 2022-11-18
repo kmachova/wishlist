@@ -6,6 +6,8 @@ import dk.cngroup.wishlist.InvalidProductCodesInFileException
 import dk.cngroup.wishlist.entity.Product
 import dk.cngroup.wishlist.entity.ProductRepository
 import dk.cngroup.wishlist.entity.Wishlist
+import org.springframework.data.domain.Example
+import org.springframework.data.domain.ExampleMatcher
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
@@ -15,6 +17,9 @@ import java.io.InputStreamReader
 
 @Service
 class ReadWishlistService(private val productRepository: ProductRepository) {
+
+    val productExampleMatcher = ExampleMatcher.matchingAll().withIgnoreCase().withIgnoreNullValues()
+
     fun getWishlistFromCsv(file: MultipartFile): Wishlist {
         val productsFromFile = getProductsFromFile(file)
             .splitByPresenceInRepo()
@@ -36,12 +41,12 @@ class ReadWishlistService(private val productRepository: ProductRepository) {
         val validProducts = mutableListOf<Product>()
 
         this.forEach {
-            val result = productRepository.findFirstProductByCodeIgnoreCase(it.code)
+            val example = Example.of(it, productExampleMatcher)
+            val results = productRepository.findAll(example)
 
-            if (result == null) {
-                invalidProductsCodes.add(it.code)
-            } else {
-                validProducts.add(result)
+            when (results.size) {
+                0 -> invalidProductsCodes.add(it.code)
+                else -> validProducts.add(results[0])
             }
         }
         return ProductsFromCsv(validProducts, invalidProductsCodes)

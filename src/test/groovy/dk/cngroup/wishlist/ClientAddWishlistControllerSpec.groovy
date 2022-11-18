@@ -30,15 +30,13 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         productRepository.saveAll(existingProductCodes.collect { createProduct(it) })
     }
 
-    def 'should add wishlist with codes only to client'() {
+    def 'should add wishlist to client: #name'() {
         given:
         clientRepository.save(vader)
         productRepository.saveAll([deathStar, starDestroyer, tieFighter])
         clearEntityManager()
 
-        def productCodes = [deathStar.code, starDestroyer.code, tieFighter.code]
-
-        def file = mockCsvFile(productCodes.join('\n'))
+        def file = mockCsvFile(productInfo)
 
         when:
         def results = mockMvc.perform(multipart(addWishlistPath)
@@ -52,12 +50,19 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
                 .getContentAsString()
 
         and: 'wishlist was saved and linked to correct client'
-        clientRepository.findByUserName(VADER_USERNAME)
-                .wishes[0].products.collect { it.code } == productCodes
+        clientRepository.findByUserName(VADER_USERNAME).wishes[0].products.with {
+            collect { product -> product.code } == [DEATH_STAR, STAR_DESTROYER, TIE_FIGHTER]
+            collect { product -> product.color } == ['black', null, null]
+        }
 
         and: 'response contains client with new wishlist in correct format'
         assertThatJson(response)
                 .isEqualTo(VADER_JSON)
+
+        where:
+        name                         | productInfo
+        'codes only'                 | "$DEATH_STAR\n$STAR_DESTROYER\n$TIE_FIGHTER"
+        'colors - skip non-existing' | "$DEATH_STAR,black\n$STAR_DESTROYER\n$TIE_FIGHTER"
     }
 
     def 'should not override existing wishlists'() {
@@ -130,6 +135,30 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
                 existingProductCodes[2],
                 nonExistingProductCodes[1]
         ].join('\n'))
+
+        when:
+        def results = mockMvc.perform(multipart(addWishlistPath)
+                .file(productCodesCsv))
+
+        then:
+        def exception = results
+                .andExpect(status().isBadRequest())
+                .andReturn()
+                .getResolvedException()
+
+        and:
+        exception instanceof InvalidProductCodesInFileException
+        exception.message == errorMessage400(expectedMessage)
+    }
+
+    def 'should fail when some of products have non-matching color'() {
+        given:
+        def expectedMessage = "Wishlist was not created since some of products specified in the file do not exist. " +
+                "Codes of these products are: ['$DEATH_STAR', '$TIE_FIGHTER']"
+
+        def anyColor = FAKER.color().name()
+        def productCodesCsv = mockCsvFile(
+                "${existingProductCodes[0]}\n$DEATH_STAR,pink\n$TIE_FIGHTER,$anyColor\n${existingProductCodes[1]}")
 
         when:
         def results = mockMvc.perform(multipart(addWishlistPath)

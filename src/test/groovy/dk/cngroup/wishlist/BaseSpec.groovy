@@ -32,7 +32,10 @@ class BaseSpec extends Specification implements TestUtils {
     EntityManager entityManager
 
     protected static final FAKER = new Faker()
-    protected static final PRODUCT_IN_ALL_WISHLISTS = 'Death Star'
+    protected static final DEATH_STAR = 'Death Star'
+    protected static final TIE_FIGHTER = 'TIE Fighter'
+    protected static final STAR_DESTROYER = 'Star Destroyer'
+
     protected static final VADER_USERNAME = 'DARTH_VADER'
 
     protected static final VADER_JSON = new File('src/test/resources/responses/DarthVaderWithWishlists.json').text
@@ -44,10 +47,10 @@ class BaseSpec extends Specification implements TestUtils {
         new Client(null, true, firstName, lastName, wishlist)
     }
 
-    protected tieFighter = createProduct("TIE Fighter")
-    protected deathStar = createProduct(PRODUCT_IN_ALL_WISHLISTS, 'black')
-    protected starDestroyer = createProduct("Star Destroyer")
-    private sand = createProduct("sand")
+    protected tieFighter = createProduct(TIE_FIGHTER)
+    protected deathStar = createProduct(DEATH_STAR, 'black')
+    protected starDestroyer = createProduct(STAR_DESTROYER)
+    private sand = createProduct('sand')
 
     protected wishlist3Products = new Wishlist(products: [deathStar, starDestroyer, tieFighter])
     protected wishlist2Products = new Wishlist(products: [deathStar, starDestroyer])

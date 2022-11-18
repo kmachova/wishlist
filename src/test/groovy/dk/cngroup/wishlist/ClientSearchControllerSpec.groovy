@@ -26,11 +26,11 @@ class ClientSearchControllerSpec extends BaseSpec {
                 .andExpect(jsonPath('$', hasSize(expectedClientCount)))
 
         where:
-        productCode              || expectedClientCount
-        'sand'                   || 0
-        'TIE Fighter'            || 1
-        'Star Destroyer'         || 2
-        PRODUCT_IN_ALL_WISHLISTS || 3
+        productCode    || expectedClientCount
+        'sand'         || 0
+        TIE_FIGHTER    || 1
+        STAR_DESTROYER || 2
+        DEATH_STAR     || 3
     }
 
     def 'should return clients in correct format'() {
@@ -43,7 +43,7 @@ class ClientSearchControllerSpec extends BaseSpec {
 
         when:
         def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
-                .queryParam(PRODUCT_CODE_PARAM, PRODUCT_IN_ALL_WISHLISTS))
+                .queryParam(PRODUCT_CODE_PARAM, DEATH_STAR))
 
         then:
         def response = results
@@ -66,7 +66,7 @@ class ClientSearchControllerSpec extends BaseSpec {
 
         when:
         def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
-                .queryParam(PRODUCT_CODE_PARAM, PRODUCT_IN_ALL_WISHLISTS))
+                .queryParam(PRODUCT_CODE_PARAM, DEATH_STAR))
 
         then:
         results
@@ -81,7 +81,7 @@ class ClientSearchControllerSpec extends BaseSpec {
 
         when:
         def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
-                .queryParam(PRODUCT_CODE_PARAM, PRODUCT_IN_ALL_WISHLISTS))
+                .queryParam(PRODUCT_CODE_PARAM, DEATH_STAR))
 
         then:
         results
@@ -127,10 +127,10 @@ class ClientSearchControllerSpec extends BaseSpec {
                 .andExpect(jsonPath('$[0].lastName').value('Vader'))
 
         where:
-        productCode << [PRODUCT_IN_ALL_WISHLISTS,
-                        PRODUCT_IN_ALL_WISHLISTS.toUpperCase(),
-                        PRODUCT_IN_ALL_WISHLISTS.toLowerCase(),
-                        PRODUCT_IN_ALL_WISHLISTS.replace('h', 'H')
+        productCode << [DEATH_STAR,
+                        DEATH_STAR.toUpperCase(),
+                        DEATH_STAR.toLowerCase(),
+                        DEATH_STAR.replace('h', 'H')
         ]
     }
 
