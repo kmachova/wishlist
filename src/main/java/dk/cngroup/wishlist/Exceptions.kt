@@ -1,5 +1,6 @@
 package dk.cngroup.wishlist
 
+import com.opencsv.exceptions.CsvException
 import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException
 
@@ -19,8 +20,12 @@ class ClientUsernameNotFoundException(username: String) :
 class ProductCodeNotFoundException(productCode: String) :
     NotFoundException("Product code '$productCode' specified in the query parameter does not exist")
 
-class InvalidProductCodeInFileException(productCode: String) :
-    BadRequestException("At least one product code ('$productCode') in the file with the wish list is invalid")
+class InvalidCsvLinesException(exceptions: List<CsvException>) :
+    BadRequestException(
+        "Some of csv lines are invalid: ${exceptions.map { "Line ${it.lineNumber}: ${it.message}" }}"
+    )
 
-class WishesCsvUpdateException :
-    ResponseStatusException(HttpStatus.BAD_REQUEST, "Error in uploading file with wishes")
+class InvalidProductCodesInFileException(productCodes: List<String>) :
+    BadRequestException(
+        "Wishlist was not created since some of products specified in the file do not exist. Codes of these products are: ${productCodes.map { "'$it'" }}"
+    )

@@ -1,9 +1,8 @@
 package dk.cngroup.wishlist.service
 
-import com.opencsv.bean.CsvToBean
 import com.opencsv.bean.CsvToBeanBuilder
-import dk.cngroup.wishlist.InvalidProductCodeInFileException
-import dk.cngroup.wishlist.WishesCsvUpdateException
+import dk.cngroup.wishlist.InvalidCsvLinesException
+import dk.cngroup.wishlist.InvalidProductCodesInFileException
 import dk.cngroup.wishlist.entity.Product
 import dk.cngroup.wishlist.entity.ProductRepository
 import dk.cngroup.wishlist.entity.Wishlist
@@ -12,44 +11,59 @@ import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.server.ResponseStatusException
 import java.io.BufferedReader
-import java.io.IOException
 import java.io.InputStreamReader
 
 @Service
 class ReadWishlistService(private val productRepository: ProductRepository) {
     fun getWishlistFromCsv(file: MultipartFile): Wishlist {
         val productsFromFile = getProductsFromFile(file)
-        val filteredProducts = filterProducts(productsFromFile)
-        return Wishlist(products = filteredProducts)
+            .splitByPresenceInRepo()
+        if (productsFromFile.allValid) {
+            return Wishlist(products = productsFromFile.productsFromRepo)
+        } else throw InvalidProductCodesInFileException(productsFromFile.failedProductCodes)
     }
 
     fun getProductsFromFile(file: MultipartFile): List<Product> {
-        throwIfFileEmpty(file)
-        try {
-            InputStreamReader(file.inputStream).buffered().use {
-                return csvToProducts(it).parse()
+        if (file.isEmpty) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "File with wishes is empty")
+
+        InputStreamReader(file.inputStream).buffered().use {
+            return csvToProducts(it)
+        }
+    }
+
+    private fun List<Product>.splitByPresenceInRepo(): ProductsFromCsv {
+        val invalidProductsCodes = mutableListOf<String>()
+        val validProducts = mutableListOf<Product>()
+
+        this.forEach {
+            val result = productRepository.findFirstProductByCodeIgnoreCase(it.code)
+
+            if (result == null) {
+                invalidProductsCodes.add(it.code)
+            } else {
+                validProducts.add(result)
             }
-        } catch (ex: Exception) {
-            throw WishesCsvUpdateException()
         }
+        return ProductsFromCsv(validProducts, invalidProductsCodes)
     }
 
-    private fun filterProducts(products: List<Product>): MutableList<Product> {
-        return products.map {
-            productRepository.findFirstProductByCodeIgnoreCase(it.code)
-                ?: throw InvalidProductCodeInFileException(it.code)
-        }
-            .toMutableList()
-    }
-
-    private fun csvToProducts(fileReader: BufferedReader?): CsvToBean<Product> =
-        CsvToBeanBuilder<Product>(fileReader)
+    private fun csvToProducts(fileReader: BufferedReader?): List<Product> {
+        val beans = CsvToBeanBuilder<Product>(fileReader)
             .withType(Product::class.java)
-            .withIgnoreLeadingWhiteSpace(true)
+            .withThrowExceptions(false)
             .build()
 
-    private fun throwIfFileEmpty(file: MultipartFile) {
-        if (file.isEmpty)
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "File with wishes is empty")
+        val products = beans.parse()
+        val exceptions = beans.capturedExceptions
+
+        if (exceptions.size == 0) {
+            return products
+        } else throw InvalidCsvLinesException(exceptions)
     }
 }
+
+data class ProductsFromCsv(
+    val productsFromRepo: MutableList<Product>,
+    val failedProductCodes: List<String>,
+    val allValid: Boolean = failedProductCodes.isEmpty()
+)

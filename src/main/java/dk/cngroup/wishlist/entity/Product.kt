@@ -1,6 +1,7 @@
 package dk.cngroup.wishlist.entity
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.opencsv.bean.CsvBindByName
 import com.opencsv.bean.CsvBindByPosition
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.rest.core.annotation.Description
@@ -17,7 +18,7 @@ class Product(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long? = null,
 
-    @CsvBindByPosition(position = 0)
+    @CsvBindByPosition(position = 0, required = true)
     @Description("Unique name of the item")
     @field:NotNull
     val code: String,

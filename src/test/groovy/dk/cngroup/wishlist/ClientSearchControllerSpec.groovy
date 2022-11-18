@@ -39,8 +39,7 @@ class ClientSearchControllerSpec extends BaseSpec {
         vader.addWishlist(wishlist3Products)
         clientRepository.save(vader)
         //clientRepository.findByUserName(VADER_USERNAME)
-        entityManager.flush()
-        entityManager.clear()
+        clearEntityManager()
 
         when:
         def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
