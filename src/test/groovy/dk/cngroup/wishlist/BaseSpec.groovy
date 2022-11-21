@@ -6,6 +6,7 @@ import dk.cngroup.wishlist.entity.ClientRepository
 import dk.cngroup.wishlist.entity.Product
 import dk.cngroup.wishlist.entity.ProductRepository
 import dk.cngroup.wishlist.entity.Wishlist
+import dk.cngroup.wishlist.entity.WishlistRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -29,12 +30,15 @@ class BaseSpec extends Specification implements TestUtils {
     ProductRepository productRepository
 
     @Autowired
+    WishlistRepository wishlistRepository
+
+    @Autowired
     EntityManager entityManager
 
     protected static final FAKER = new Faker()
-    protected static final DEATH_STAR = 'Death Star'
-    protected static final TIE_FIGHTER = 'TIE Fighter'
-    protected static final STAR_DESTROYER = 'Star Destroyer'
+    protected static final DEATH_STAR_CODE = 'Death Star'
+    protected static final TIE_FIGHTER_CODE = 'TIE Fighter'
+    protected static final STAR_DESTROYER_CODE = 'Star Destroyer'
 
     protected static final VADER_USERNAME = 'DARTH_VADER'
 
@@ -47,9 +51,9 @@ class BaseSpec extends Specification implements TestUtils {
         new Client(null, true, firstName, lastName, wishlist)
     }
 
-    protected tieFighter = createProduct(TIE_FIGHTER)
-    protected deathStar = createProduct(DEATH_STAR, 'black')
-    protected starDestroyer = createProduct(STAR_DESTROYER)
+    protected tieFighter = createProduct(TIE_FIGHTER_CODE)
+    protected deathStar = createProduct(DEATH_STAR_CODE, 'black')
+    protected starDestroyer = createProduct(STAR_DESTROYER_CODE)
     private sand = createProduct('sand')
 
     protected wishlist3Products = new Wishlist(products: [deathStar, starDestroyer, tieFighter])

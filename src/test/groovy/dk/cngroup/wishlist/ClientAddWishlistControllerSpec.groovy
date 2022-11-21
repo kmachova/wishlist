@@ -56,6 +56,8 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         'colors - blank value for non-existing' | "$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE,\t \t \n$TIE_FIGHTER_CODE, "
         'colors - empty value for non-existing' | "$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE,\n$TIE_FIGHTER_CODE,"
         'when empty lines are present'          | "\n\n$DEATH_STAR_CODE\n\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE\n"
+        'with quotes'                           | "\"$DEATH_STAR_CODE\",\"black\"\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE"
+        'with quotes and leading whitespaces'   | "\"$DEATH_STAR_CODE\",  \"black\"\n\t\t\t\"$STAR_DESTROYER_CODE\"\n   \"$TIE_FIGHTER_CODE\""
     }
 
     def 'should not override existing wishlists'() {
@@ -72,6 +74,27 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         results
                 .andExpect(status().isOk())
                 .andExpect(jsonPath('$.wishes', hasSize(3)))
+    }
+
+    def 'should pass with commas in quoted product properties'() {
+        given:
+        def productCode = "${FAKER.space().galaxy()},${FAKER.space().nebula()}".toString()
+        def color = "${FAKER.color().name()}, ${FAKER.color().name()} and ${FAKER.color().name()}".toString()
+
+        productRepository.save(createProduct(productCode, color))
+        clientRepository.save(vader)
+        clearEntityManager()
+
+        when:
+        def results = mockMvc.perform(multipart(addWishlistPath)
+                .file(mockCsvFile("\"$productCode\",\"$color\"")))
+
+        then:
+        results
+                .andExpect(status().isOk())
+                .andExpect(jsonPath('$.wishes[0].products[0].code').value(productCode))
+                .andExpect(jsonPath('$.wishes[0].products[0].color').value(color))
+
     }
 
     def 'should fail when file with wishes is empty'() {
@@ -176,6 +199,39 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         and:
         exception instanceof InvalidProductCodesInFileException
         exception.message == errorMessage400(expectedMessage)
+    }
+
+    def 'should not support partial matches: #name'() {
+        given:
+        productRepository.saveAndFlush(deathStar)
+        clientRepository.saveAndFlush(vader)
+
+        when:
+        def results = mockMvc.perform(multipart(addWishlistPath)
+                .file(mockCsvFile(unexactCode)))
+
+        then:
+        def exception = results
+                .andExpect(status().isBadRequest())
+                .andReturn()
+                .getResolvedException()
+
+        and:
+        exception instanceof InvalidProductCodesInFileException
+        exception.message.contains("Line 1: code=${unexactCode}")
+
+        and: 'wishlist with the original code can be added'
+        mockMvc.perform(multipart(addWishlistPath)
+                .file(mockCsvFile(DEATH_STAR_CODE)))
+                .andExpect(status().isOk())
+
+        where:
+        name                          | unexactCode
+        'valid code at the beginning' | "$DEATH_STAR_CODE "
+        'valid code at the end'       | " $DEATH_STAR_CODE"
+        'valid code in the middle'    | " $DEATH_STAR_CODE "
+        'regex'                       | DEATH_STAR_CODE.replace('a', '.')
+
     }
 
     def 'should fail when some of products have non-matching color'() {

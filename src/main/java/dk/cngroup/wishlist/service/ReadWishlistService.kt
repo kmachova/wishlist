@@ -24,7 +24,10 @@ class ReadWishlistService(private val productRepository: ProductRepository) {
         const val MAX_COLUMN_NUMBER = 2
     }
 
-    val productExampleMatcher = ExampleMatcher.matchingAll().withIgnoreCase().withIgnoreNullValues()
+    val productExampleMatcher = ExampleMatcher.matchingAll()
+        .withIgnoreCase()
+        .withIgnoreNullValues()
+        .withStringMatcher(ExampleMatcher.StringMatcher.EXACT)
 
     fun getWishlistFromCsv(file: MultipartFile): Wishlist {
         val productsFromFile = getProductsFromFile(file)
@@ -70,6 +73,8 @@ class ReadWishlistService(private val productRepository: ProductRepository) {
                 checkNumberOfColumns(line)
             }
             .withThrowExceptions(false)
+            .withQuoteChar('"')
+            .withIgnoreLeadingWhiteSpace(true)
             .build()
             .checkAndParse()
 
