@@ -159,8 +159,8 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
 
     def 'should fail when some of product codes are not found in product repo'() {
         given:
-        def expectedMessage = "Wishlist was not created since some of products specified in the file do not exist. " +
-                "Codes of these products are: ['${nonExistingProductCodes[0]}', '${nonExistingProductCodes[1]}']"
+        def expectedMessage = "Wishlist was not created since some of products specified in the file do not exist: " +
+                "[Line 3: code=${nonExistingProductCodes[0]}, color=null, Line 5: code=${nonExistingProductCodes[1]}, color=null]"
 
         def productCodesCsv = mockCsvFile([
                 existingProductCodes[0],
@@ -187,12 +187,12 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
 
     def 'should fail when some of products have non-matching color'() {
         given:
-        def expectedMessage = "Wishlist was not created since some of products specified in the file do not exist. " +
-                "Codes of these products are: ['$DEATH_STAR', '$TIE_FIGHTER']"
-
         def anyColor = FAKER.color().name()
         def productCodesCsv = mockCsvFile(
                 "${existingProductCodes[0]}\n$DEATH_STAR,pink\n$TIE_FIGHTER,$anyColor\n${existingProductCodes[1]}")
+
+        def expectedMessage = "Wishlist was not created since some of products specified in the file do not exist: " +
+                "[Line 2: code=$DEATH_STAR, color=pink, Line 3: code=$TIE_FIGHTER, color=$anyColor]"
 
         when:
         def results = mockMvc.perform(multipart(addWishlistPath)

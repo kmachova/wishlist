@@ -25,7 +25,10 @@ class Product(
 
     @CsvBindByPosition(position = 1)
     var color: String? = null
-) : AuditableEntity()
+) : AuditableEntity() {
+    override
+    fun toString(): String = "code=${this.code}, color=${this.color}"
+}
 
 interface ProductRepository : JpaRepository<Product?, Long?> {
     fun findFirstProductByCodeIgnoreCase(code: String): Product?

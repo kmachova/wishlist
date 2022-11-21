@@ -30,8 +30,8 @@ class ReadWishlistService(private val productRepository: ProductRepository) {
         val productsFromFile = getProductsFromFile(file)
             .splitByPresenceInRepo()
         if (productsFromFile.allValid) {
-            return Wishlist(products = productsFromFile.productsFromRepo)
-        } else throw InvalidProductCodesInFileException(productsFromFile.failedProductCodes)
+            return Wishlist(products = productsFromFile.passedProducts)
+        } else throw InvalidProductCodesInFileException(productsFromFile.failedProducts)
     }
 
     fun getProductsFromFile(file: MultipartFile): List<Product> {
@@ -43,19 +43,19 @@ class ReadWishlistService(private val productRepository: ProductRepository) {
     }
 
     private fun List<Product>.splitByPresenceInRepo(): ProductsFromCsv {
-        val invalidProductsCodes = mutableListOf<String>()
+        val invalidProductsCodes = mutableMapOf<Int, Product>()
         val validProducts = mutableListOf<Product>()
 
-        this.forEach {
-            if (it.color.isNullOrBlank()) {
-                it.color = null
+        this.forEachIndexed { index, product ->
+            if (product.color.isNullOrBlank()) {
+                product.color = null
             }
 
-            val example = Example.of(it, productExampleMatcher)
+            val example = Example.of(product, productExampleMatcher)
             val results = productRepository.findAll(example)
 
             when (results.size) {
-                0 -> invalidProductsCodes.add(it.code)
+                0 -> invalidProductsCodes[index + 1] = product
                 else -> validProducts.add(results[0])
             }
         }
@@ -88,7 +88,7 @@ class ReadWishlistService(private val productRepository: ProductRepository) {
 }
 
 data class ProductsFromCsv(
-    val productsFromRepo: MutableList<Product>,
-    val failedProductCodes: List<String>,
-    val allValid: Boolean = failedProductCodes.isEmpty()
+    val passedProducts: MutableList<Product>,
+    val failedProducts: Map<Int, Product>,
+    val allValid: Boolean = failedProducts.isEmpty()
 )

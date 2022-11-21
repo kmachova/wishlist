@@ -1,6 +1,7 @@
 package dk.cngroup.wishlist
 
 import com.opencsv.exceptions.CsvException
+import dk.cngroup.wishlist.entity.Product
 import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException
 
@@ -25,7 +26,8 @@ class InvalidCsvLinesException(exceptions: List<CsvException>) :
         "Some of csv lines are invalid: ${exceptions.map { "Line ${it.lineNumber}: ${it.message}" }}"
     )
 
-class InvalidProductCodesInFileException(productCodes: List<String>) :
+class InvalidProductCodesInFileException(products: Map<Int, Product>) :
     BadRequestException(
-        "Wishlist was not created since some of products specified in the file do not exist. Codes of these products are: ${productCodes.map { "'$it'" }}"
+        "Wishlist was not created since some of products specified in the file do not exist: " +
+                products.map { "Line ${it.key}: ${it.value}" }
     )
