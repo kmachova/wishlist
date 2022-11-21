@@ -16,19 +16,9 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
     private static final ADD_WISHLIST_TEMPLATE = "/clients/client-management/{username}/addWishlist"
 
     @Shared
-    private final String[] existingProductCodes = (0..<3).collect { FAKER.space().star() }
-
-    @Shared
-    private final String[] nonExistingProductCodes = (0..<2).collect { randomProductCode() }
-
-    @Shared
     private final addWishlistPath = pathFromTemplate(ADD_WISHLIST_TEMPLATE, VADER_USERNAME)
 
-    private final minimalValidFile = mockCsvFile(existingProductCodes[0])
-
-    def setup() {
-        productRepository.saveAll(existingProductCodes.collect { createProduct(it) })
-    }
+    private final minimalCsvFile = mockCsvFile(DEATH_STAR_CODE)
 
     def 'should add wishlist to client: #name'() {
         given:
@@ -51,7 +41,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
 
         and: 'wishlist was saved and linked to correct client'
         clientRepository.findByUserName(VADER_USERNAME).wishes[0].products.with {
-            collect { product -> product.code } == [DEATH_STAR, STAR_DESTROYER, TIE_FIGHTER]
+            collect { product -> product.code } == [DEATH_STAR_CODE, STAR_DESTROYER_CODE, TIE_FIGHTER_CODE]
             collect { product -> product.color } == ['black', null, null]
         }
 
@@ -61,11 +51,11 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
 
         where:
         name                                    | productInfo
-        'codes only'                            | "$DEATH_STAR\n$STAR_DESTROYER\n$TIE_FIGHTER"
-        'colors - skip value for non-existing'  | "$DEATH_STAR,black\n$STAR_DESTROYER\n$TIE_FIGHTER"
-        'colors - blank value for non-existing' | "$DEATH_STAR,black\n$STAR_DESTROYER,\t \t \n$TIE_FIGHTER, "
-        'colors - empty value for non-existing' | "$DEATH_STAR,black\n$STAR_DESTROYER,\n$TIE_FIGHTER,"
-        'when empty lines are present'          | "\n\n$DEATH_STAR\n\n$STAR_DESTROYER\n$TIE_FIGHTER\n"
+        'codes only'                            | "$DEATH_STAR_CODE\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE"
+        'colors - skip value for non-existing'  | "$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE"
+        'colors - blank value for non-existing' | "$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE,\t \t \n$TIE_FIGHTER_CODE, "
+        'colors - empty value for non-existing' | "$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE,\n$TIE_FIGHTER_CODE,"
+        'when empty lines are present'          | "\n\n$DEATH_STAR_CODE\n\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE\n"
     }
 
     def 'should not override existing wishlists'() {
@@ -76,7 +66,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
 
         when:
         def results = mockMvc.perform(multipart(addWishlistPath)
-                .file(minimalValidFile))
+                .file(minimalCsvFile))
 
         then: 'number of wishlists was increased by 1'
         results
@@ -109,7 +99,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         def randomColumnsN = 15
         def randomColumns = (0..<randomColumnsN).collect { FAKER.space().starCluster() }.join(',')
         def productCodesCsv =
-                mockCsvFile("$DEATH_STAR,black\n$STAR_DESTROYER,,\n$TIE_FIGHTER$randomColumns")
+                mockCsvFile("$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE,,\n$TIE_FIGHTER_CODE$randomColumns")
 
         def expectedMessage = "Some of csv lines are invalid: [Line 2: Too many columns (3). Maximum is: 2., " +
                 "Line 3: Too many columns ($randomColumnsN). Maximum is: 2.]"
@@ -153,20 +143,23 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
 
         where:
         name    | fileContent
-        'empty' | "${existingProductCodes[0]}\n,\n${existingProductCodes[1]}\n,\n${nonExistingProductCodes[0]}\n${existingProductCodes[2]}"
-        'blank' | "${existingProductCodes[0]}\n\t,\n${existingProductCodes[1]}\n  \n${nonExistingProductCodes[0]}\n${existingProductCodes[2]}"
+        'empty' | "${randomProductCode()}\n,\n${randomProductCode()}\n,\n${}\n${randomProductCode()}"
+        'blank' | "${randomProductCode()}\n\t,\n${randomProductCode()}\n  \n${randomProductCode()}\n${randomProductCode()}"
     }
 
     def 'should fail when some of product codes are not found in product repo'() {
         given:
+        productRepository.saveAllAndFlush([deathStar, starDestroyer, tieFighter])
+        def nonExistingProductCodes = (0..<2).collect { randomProductCode() }
+
         def expectedMessage = "Wishlist was not created since some of products specified in the file do not exist: " +
                 "[Line 3: code=${nonExistingProductCodes[0]}, color=null, Line 5: code=${nonExistingProductCodes[1]}, color=null]"
 
         def productCodesCsv = mockCsvFile([
-                existingProductCodes[0],
-                existingProductCodes[1],
+                DEATH_STAR_CODE,
+                TIE_FIGHTER_CODE,
                 nonExistingProductCodes[0],
-                existingProductCodes[2],
+                STAR_DESTROYER_CODE,
                 nonExistingProductCodes[1]
         ].join('\n'))
 
@@ -187,12 +180,14 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
 
     def 'should fail when some of products have non-matching color'() {
         given:
+        productRepository.saveAll([deathStar, starDestroyer, tieFighter])
+
         def anyColor = FAKER.color().name()
         def productCodesCsv = mockCsvFile(
-                "${existingProductCodes[0]}\n$DEATH_STAR,pink\n$TIE_FIGHTER,$anyColor\n${existingProductCodes[1]}")
+                "$STAR_DESTROYER_CODE\n$DEATH_STAR_CODE,pink\n$TIE_FIGHTER_CODE,$anyColor")
 
         def expectedMessage = "Wishlist was not created since some of products specified in the file do not exist: " +
-                "[Line 2: code=$DEATH_STAR, color=pink, Line 3: code=$TIE_FIGHTER, color=$anyColor]"
+                "[Line 2: code=$DEATH_STAR_CODE, color=pink, Line 3: code=$TIE_FIGHTER_CODE, color=$anyColor]"
 
         when:
         def results = mockMvc.perform(multipart(addWishlistPath)
@@ -211,13 +206,15 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
 
     def 'should fail when client does not exist'() {
         given:
+        productRepository.saveAll([deathStar, starDestroyer, tieFighter])
+
         def nonExistingUsername = randomUserName()
 
         def path = pathFromTemplate(ADD_WISHLIST_TEMPLATE, nonExistingUsername)
 
         when:
         def results = mockMvc.perform(multipart(path)
-                .file(minimalValidFile))
+                .file(minimalCsvFile))
 
         then:
         def exception = results
