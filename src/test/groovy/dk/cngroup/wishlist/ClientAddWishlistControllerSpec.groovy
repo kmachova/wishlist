@@ -60,9 +60,12 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
                 .isEqualTo(VADER_JSON)
 
         where:
-        name                         | productInfo
-        'codes only'                 | "$DEATH_STAR\n$STAR_DESTROYER\n$TIE_FIGHTER"
-        'colors - skip non-existing' | "$DEATH_STAR,black\n$STAR_DESTROYER\n$TIE_FIGHTER"
+        name                                    | productInfo
+        'codes only'                            | "$DEATH_STAR\n$STAR_DESTROYER\n$TIE_FIGHTER"
+        'colors - skip value for non-existing'  | "$DEATH_STAR,black\n$STAR_DESTROYER\n$TIE_FIGHTER"
+        'colors - blank value for non-existing' | "$DEATH_STAR,black\n$STAR_DESTROYER,\t \t \n$TIE_FIGHTER, "
+        'colors - empty value for non-existing' | "$DEATH_STAR,black\n$STAR_DESTROYER,\n$TIE_FIGHTER,"
+        'when empty lines are present'          | "\n\n$DEATH_STAR\n\n$STAR_DESTROYER\n$TIE_FIGHTER\n"
     }
 
     def 'should not override existing wishlists'() {
@@ -83,7 +86,8 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
 
     def 'should fail when file with wishes is empty'() {
         given:
-        def productCodesCsv = mockCsvFile("")
+        def productCodesCsv =
+                mockCsvFile("")
 
         when:
         def results = mockMvc.perform(multipart(addWishlistPath)
@@ -100,13 +104,15 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         exception.message == errorMessage400('File with wishes is empty')
     }
 
-    def 'should return all errors when file with wishes is invalid'() {
+    def 'should fail when some of rows contain too many columns'() {
         given:
-        def expectedMessage = "Some of csv lines are invalid: [Line 2: Field 'code' is mandatory but no value was provided., " +
-                "Line 4: Field 'code' is mandatory but no value was provided.]"
+        def randomColumnsN = 15
+        def randomColumns = (0..<randomColumnsN).collect { FAKER.space().starCluster() }.join(',')
+        def productCodesCsv =
+                mockCsvFile("$DEATH_STAR,black\n$STAR_DESTROYER,,\n$TIE_FIGHTER$randomColumns")
 
-        def productCodesCsv = mockCsvFile(
-                "${existingProductCodes[0]}\n,,\n${existingProductCodes[1]}\n  , \n${nonExistingProductCodes[0]}\n${existingProductCodes[2]}")
+        def expectedMessage = "Some of csv lines are invalid: [Line 2: Too many columns (3). Maximum is: 2., " +
+                "Line 3: Too many columns ($randomColumnsN). Maximum is: 2.]"
 
         when:
         def results = mockMvc.perform(multipart(addWishlistPath)
@@ -121,6 +127,34 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         and:
         exception instanceof InvalidCsvLinesException
         exception.message == errorMessage400(expectedMessage)
+
+    }
+
+    def 'should fail when product code is: #name'() {
+        given:
+        def expectedMessage = "Some of csv lines are invalid: [Line 2: Field 'code' is mandatory but no value was provided., " +
+                "Line 4: Field 'code' is mandatory but no value was provided.]"
+
+        def productCodesCsv = mockCsvFile(fileContent)
+
+        when:
+        def results = mockMvc.perform(multipart(addWishlistPath)
+                .file(productCodesCsv))
+
+        then:
+        def exception = results
+                .andExpect(status().isBadRequest())
+                .andReturn()
+                .getResolvedException()
+
+        and:
+        exception instanceof InvalidCsvLinesException
+        exception.message == errorMessage400(expectedMessage)
+
+        where:
+        name    | fileContent
+        'empty' | "${existingProductCodes[0]}\n,\n${existingProductCodes[1]}\n,\n${nonExistingProductCodes[0]}\n${existingProductCodes[2]}"
+        'blank' | "${existingProductCodes[0]}\n\t,\n${existingProductCodes[1]}\n  \n${nonExistingProductCodes[0]}\n${existingProductCodes[2]}"
     }
 
     def 'should fail when some of product codes are not found in product repo'() {

@@ -1,6 +1,8 @@
 package dk.cngroup.wishlist.service
 
+import com.opencsv.bean.CsvToBean
 import com.opencsv.bean.CsvToBeanBuilder
+import com.opencsv.exceptions.CsvException
 import dk.cngroup.wishlist.InvalidCsvLinesException
 import dk.cngroup.wishlist.InvalidProductCodesInFileException
 import dk.cngroup.wishlist.entity.Product
@@ -17,6 +19,10 @@ import java.io.InputStreamReader
 
 @Service
 class ReadWishlistService(private val productRepository: ProductRepository) {
+
+    companion object {
+        const val MAX_COLUMN_NUMBER = 2
+    }
 
     val productExampleMatcher = ExampleMatcher.matchingAll().withIgnoreCase().withIgnoreNullValues()
 
@@ -41,6 +47,10 @@ class ReadWishlistService(private val productRepository: ProductRepository) {
         val validProducts = mutableListOf<Product>()
 
         this.forEach {
+            if (it.color.isNullOrBlank()) {
+                it.color = null
+            }
+
             val example = Example.of(it, productExampleMatcher)
             val results = productRepository.findAll(example)
 
@@ -52,14 +62,24 @@ class ReadWishlistService(private val productRepository: ProductRepository) {
         return ProductsFromCsv(validProducts, invalidProductsCodes)
     }
 
-    private fun csvToProducts(fileReader: BufferedReader?): List<Product> {
-        val beans = CsvToBeanBuilder<Product>(fileReader)
+    private fun csvToProducts(fileReader: BufferedReader?): List<Product> =
+        CsvToBeanBuilder<Product>(fileReader)
             .withType(Product::class.java)
+            .withIgnoreEmptyLine(true)
+            .withFilter { line ->
+                checkNumberOfColumns(line)
+            }
             .withThrowExceptions(false)
             .build()
+            .checkAndParse()
 
-        val products = beans.parse()
-        val exceptions = beans.capturedExceptions
+    private fun checkNumberOfColumns(line: Array<String>): Boolean = (line.size <= MAX_COLUMN_NUMBER).also {
+        if (!it) throw CsvException("Too many columns (${line.size}). Maximum is: $MAX_COLUMN_NUMBER.")
+    }
+
+    private fun CsvToBean<Product>.checkAndParse(): List<Product> {
+        val products = this.parse()
+        val exceptions = this.capturedExceptions
 
         if (exceptions.size == 0) {
             return products
