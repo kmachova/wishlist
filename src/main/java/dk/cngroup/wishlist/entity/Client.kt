@@ -15,15 +15,15 @@ class Client(
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         var id: Long? = null,
         var active: Boolean = true,
-        val firstName: String,
-        val lastName: String,
+        var firstName: String,
+        var lastName: String,
         @JsonManagedReference
         @OneToMany(mappedBy = "client", cascade = [CascadeType.ALL])
         @OrderColumn
-        val wishes: MutableList<Wishlist> = mutableListOf()
+        var wishes: MutableList<Wishlist> = mutableListOf()
 ) {
     @Formula("upper(concat(first_name, '_', last_name))")
-    val userName: String? = null
+    var userName: String? = null
 
     fun addWishlist(wishlist: Wishlist) {
         wishes += wishlist

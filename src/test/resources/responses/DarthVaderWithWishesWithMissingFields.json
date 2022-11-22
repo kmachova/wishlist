@@ -1,0 +1,29 @@
+{
+  "id": 1781,
+  "active": true,
+  "firstName": "Darth",
+  "lastName": "Vader",
+  "wishes": [
+    {
+      "id": 1991,
+      "products": [
+        {
+          "createdBy": "system",
+          "code": "Death Star",
+          "color": "black"
+        },
+        {
+          "createdBy": "system",
+          "id": 3599,
+          "code": "Star Destroyer"
+        },
+        {
+          "createdBy": "system",
+          "id": 3699,
+          "code": "TIE Fighter"
+        }
+      ]
+    }
+  ],
+  "userName": null
+}

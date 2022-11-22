@@ -8,16 +8,16 @@
       "id": "${json-unit.any-number}",
       "products": [
         {
-          "created": "${json-unit.ignore}",
-          "updated": "${json-unit.ignore}",
+          "created": "${json-unit.regex}[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[0-9.]*",
+          "updated": "${json-unit.regex}[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[0-9.]*",
           "createdBy": "system",
           "id": "${json-unit.any-number}",
           "code": "Death Star",
           "color": "black"
         },
         {
-          "created": "${json-unit.ignore}",
-          "updated": "${json-unit.ignore}",
+          "created": "${json-unit.matches:timeStampRegex}",
+          "updated": "${json-unit.matches:timeStampRegex}",
           "createdBy": "system",
           "id": "${json-unit.any-number}",
           "code": "Star Destroyer"
@@ -32,5 +32,5 @@
       ]
     }
   ],
-  "userName": "DARTH_VADER"
+  "userName": "${json-unit.ignore}"
 }

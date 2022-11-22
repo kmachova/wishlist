@@ -7,6 +7,7 @@ import spock.lang.Shared
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize
+import static org.hamcrest.text.MatchesPattern.matchesPattern
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -47,6 +48,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
 
         and: 'response contains client with new wishlist in correct format'
         assertThatJson(response)
+                .withMatcher('timeStampRegex', matchesPattern('[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[0-9.]*'))
                 .isEqualTo(VADER_JSON)
 
         where:

@@ -2,11 +2,19 @@ package dk.cngroup.wishlist
 
 import org.springframework.web.bind.MissingServletRequestParameterException
 
+import static net.javacrumbs.jsonunit.core.ConfigurationWhen.thenIgnore
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson
+import static net.javacrumbs.jsonunit.core.Option.IGNORING_EXTRA_FIELDS
+import static net.javacrumbs.jsonunit.core.Option.IGNORING_VALUES
+import static net.javacrumbs.jsonunit.core.ConfigurationWhen.path
+import static net.javacrumbs.jsonunit.core.ConfigurationWhen.paths
+import static net.javacrumbs.jsonunit.core.ConfigurationWhen.then
+import static net.javacrumbs.jsonunit.spring.JsonUnitResultMatchers.json
+import static org.hamcrest.text.MatchesPattern.matchesPattern
 
 class ClientSearchControllerSpec extends BaseSpec {
     private static final PRODUCT_CODE_PARAM = 'productCode'
@@ -26,24 +34,21 @@ class ClientSearchControllerSpec extends BaseSpec {
                 .andExpect(jsonPath('$', hasSize(expectedClientCount)))
 
         where:
-        productCode    || expectedClientCount
-        'sand'         || 0
-        TIE_FIGHTER    || 1
-        STAR_DESTROYER || 2
-        DEATH_STAR     || 3
+        productCode         || expectedClientCount
+        'sand'              || 0
+        TIE_FIGHTER_CODE    || 1
+        STAR_DESTROYER_CODE || 2
+        DEATH_STAR_CODE     || 3
     }
 
     def 'should return clients in correct format'() {
         given:
-        //productRepository.saveAll([deathStar, starDestroyer, tieFighter])
         vader.addWishlist(wishlist3Products)
         clientRepository.save(vader)
-        //clientRepository.findByUserName(VADER_USERNAME)
-        clearEntityManager()
 
         when:
         def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
-                .queryParam(PRODUCT_CODE_PARAM, DEATH_STAR))
+                .queryParam(PRODUCT_CODE_PARAM, DEATH_STAR_CODE))
 
         then:
         def response = results
@@ -53,8 +58,27 @@ class ClientSearchControllerSpec extends BaseSpec {
                 .getContentAsString()
 
         and:
-        assertThatJson(response).isArray().hasSize(1)
-        assertThatJson(response).node('[0]').isEqualTo(VADER_JSON)
+        assertThatJson(response)
+                .isArray()
+                .hasSize(1)
+
+        assertThatJson(response)
+                .withMatcher('timeStampRegex', matchesPattern('[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[0-9.]*'))
+                .inPath('$.[0]')
+        //.node('[0]')
+                .isObject()
+                .isEqualTo(VADER_JSON)
+
+        and: 'alternative with JsonUnit options'
+        def vaderJsonWithMissingFields = responseJsonToString('DarthVaderWithWishesWithMissingFields')
+        def pathToProducts = '[0].wishes[0].products[*]'
+
+        assertThatJson(response)
+                .when(paths( '[0].id'), thenIgnore())
+                .when(paths( '[0].wishes[0].id', "${pathToProducts}.id"), then(IGNORING_VALUES))
+                .when(path(pathToProducts), then(IGNORING_EXTRA_FIELDS))
+                .node('[0]')
+                .isEqualTo(vaderJsonWithMissingFields)
     }
 
     def 'single client should be returned only once'() {
@@ -66,7 +90,7 @@ class ClientSearchControllerSpec extends BaseSpec {
 
         when:
         def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
-                .queryParam(PRODUCT_CODE_PARAM, DEATH_STAR))
+                .queryParam(PRODUCT_CODE_PARAM, DEATH_STAR_CODE))
 
         then:
         results
@@ -81,7 +105,7 @@ class ClientSearchControllerSpec extends BaseSpec {
 
         when:
         def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
-                .queryParam(PRODUCT_CODE_PARAM, DEATH_STAR))
+                .queryParam(PRODUCT_CODE_PARAM, DEATH_STAR_CODE))
 
         then:
         results
@@ -124,13 +148,15 @@ class ClientSearchControllerSpec extends BaseSpec {
         results
                 .andExpect(status().isOk())
                 .andExpect(jsonPath('$', hasSize(1)))
-                .andExpect(jsonPath('$[0].lastName').value('Vader'))
+                .andExpect(json()
+                        .when(IGNORING_EXTRA_FIELDS)
+                        .isEqualTo("[{firstName: 'Darth', lastName: 'Vader', wishes: '#{json-unit.ignore}'}]"))
 
         where:
-        productCode << [DEATH_STAR,
-                        DEATH_STAR.toUpperCase(),
-                        DEATH_STAR.toLowerCase(),
-                        DEATH_STAR.replace('h', 'H')
+        productCode << [DEATH_STAR_CODE,
+                        DEATH_STAR_CODE.toUpperCase(),
+                        DEATH_STAR_CODE.toLowerCase(),
+                        DEATH_STAR_CODE.replace('h', 'H')
         ]
     }
 

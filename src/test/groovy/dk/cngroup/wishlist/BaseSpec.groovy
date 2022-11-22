@@ -41,9 +41,7 @@ class BaseSpec extends Specification implements TestUtils {
     protected static final STAR_DESTROYER_CODE = 'Star Destroyer'
 
     protected static final VADER_USERNAME = 'DARTH_VADER'
-
-    protected static final VADER_JSON = new File('src/test/resources/responses/DarthVaderWithWishlists.json').text
-
+    protected static final VADER_JSON = responseJsonToString('DarthVaderWithWishesAndPlaceHolders')
 
     protected createProduct(String code, String color = null) { new Product(null, code, color) }
 
