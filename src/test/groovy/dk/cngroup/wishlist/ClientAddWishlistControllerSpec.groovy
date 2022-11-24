@@ -25,7 +25,6 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         given:
         clientRepository.save(vader)
         productRepository.saveAll([deathStar, starDestroyer, tieFighter])
-        clearEntityManager()
 
         def file = mockCsvFile(productInfo)
 
@@ -85,7 +84,6 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
 
         productRepository.save(createProduct(productCode, color))
         clientRepository.save(vader)
-        clearEntityManager()
 
         when:
         def results = mockMvc.perform(multipart(addWishlistPath)

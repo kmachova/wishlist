@@ -62,11 +62,6 @@ class BaseSpec extends Specification implements TestUtils {
     private ren = createClient("Kylo", "Ren")
     protected skywalker = createClient("Luke", "Skywalker")
 
-    def clearEntityManager() {
-        entityManager.flush()
-        entityManager.clear()
-    }
-
     def fullSetup() {
         vader.addWishlist(wishlist3Products)
         ren.addWishlist(wishlist2Products)

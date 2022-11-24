@@ -13,5 +13,5 @@ class ClientAddWishlistController(
     fun addWishListFromFile(
         @PathVariable username: String,
         @RequestPart csv: MultipartFile
-    ): Client = clientService.addWishListToClient(username, csv)
+    ): Client = clientService.addWishListFromFileToClient(username, csv)
 }

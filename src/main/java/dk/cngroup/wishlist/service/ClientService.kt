@@ -16,30 +16,41 @@ class ClientService(
     private val readWishlistService: ReadWishlistService,
     private val entityManager: EntityManager
 ) {
-    private fun getByUsername(username: String): Client = try {
-        clientRepository.findClientByUserName(username)
-    } catch (e: Exception) {
-        throw ClientUsernameNotFoundException(username)
-    }
-
     fun getByProductCode(productCode: String): List<Client> {
         productRepository.findFirstProductByCodeIgnoreCase(productCode) ?: throw ProductCodeNotFoundException(
             productCode
         )
 
-        val clientIds = clientRepository.findDistinctByWishesProductsCodeIgnoreCaseOrderByUserName(productCode)
-            ?.map { it.id }
-            ?: emptyList()
-        entityManager.clear()
-        return clientRepository.findAllById(clientIds)
+        val clients = clientRepository.findDistinctByWishesProductsCodeIgnoreCaseOrderByUserName(productCode)
+            ?.map {
+                entityManager.refresh(it)
+                return@map it
+            } ?: emptyList()
+        return clients
     }
 
-    fun addWishListToClient(username: String, csv: MultipartFile): Client {
+    fun addWishListFromFileToClient(username: String, csv: MultipartFile): Client {
         val wishListFromFile = readWishlistService.getWishlistFromCsv(csv)
         val client = getByUsername(username)
 
         client.addWishlist(wishListFromFile)
         clientRepository.save(client)
+        client.refreshIfNullUsername()
         return client
     }
+
+    private fun getByUsername(username: String): Client {
+        val client = try {
+            clientRepository.findClientByUserName(username)
+        } catch (e: Exception) {
+            throw ClientUsernameNotFoundException(username)
+        }
+        return client
+    }
+
+    private fun Client.refreshIfNullUsername() =
+        this.userName ?: run {
+            clientRepository.flush()
+            entityManager.refresh(this)
+        }
 }
