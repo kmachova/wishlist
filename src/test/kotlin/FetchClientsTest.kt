@@ -35,22 +35,22 @@ class FetchClientsTest {
 
     //check log to see the difference in SQL executed by Hibernate
     @Test
-    fun testDefaultBehavior() {
+    fun `test default behavior`() {
         clientRepository.getByUserName(userName)
     }
 
     @Test
-    fun testFetchOrders() {
+    fun `test fetch orders`() {
         clientRepository.findByUserName(userName)
     }
 
     @Test
-    fun testFetchOrdersAndProducts() {
+    fun `test fetch orders and products`() {
         clientRepository.findClientByUserName(userName)
     }
 
     @Test
-    fun testSearchClientByProduct() {
+    fun `test search client id by product code`() {
         clientRepository.findDistinctByWishesProductsCodeIgnoreCaseOrderByUserName(productCode)
     }
 }

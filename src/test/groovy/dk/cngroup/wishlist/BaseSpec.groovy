@@ -73,7 +73,6 @@ class BaseSpec extends Specification implements TestUtils {
         skywalker.addWishlist(wishlist1Product)
         clientRepository.saveAll([vader, ren, skywalker])
         productRepository.save(sand)
-        clearEntityManager()
     }
 
     String randomProductCode() {

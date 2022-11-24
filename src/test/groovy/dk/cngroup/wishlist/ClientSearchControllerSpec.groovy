@@ -74,7 +74,7 @@ class ClientSearchControllerSpec extends BaseSpec {
         def pathToProducts = '[0].wishes[0].products[*]'
 
         assertThatJson(response)
-                .when(paths( '[0].id'), thenIgnore())
+                .when(path( '[0].id'), thenIgnore())
                 .when(paths( '[0].wishes[0].id', "${pathToProducts}.id"), then(IGNORING_VALUES))
                 .when(path(pathToProducts), then(IGNORING_EXTRA_FIELDS))
                 .node('[0]')
