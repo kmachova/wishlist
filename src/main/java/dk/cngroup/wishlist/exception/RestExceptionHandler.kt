@@ -1,44 +1,44 @@
-package dk.cngroup.wishlist.controller
+package dk.cngroup.wishlist.exception
 
 import lombok.extern.slf4j.Slf4j
 import mu.KotlinLogging
 import org.springframework.dao.EmptyResultDataAccessException
-import org.springframework.http.HttpStatus.*
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.MissingRequestValueException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.multipart.support.MissingServletRequestPartException
-import org.springframework.web.server.ResponseStatusException
 
 @RestControllerAdvice
 @Slf4j
 class RestExceptionHandler {
 
     @ExceptionHandler(EmptyResultDataAccessException::class)
-    @ResponseStatus(NOT_FOUND)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     fun handleNotFoundException(e: Exception): String? {
         return e.message
     }
 
     @ExceptionHandler(MissingRequestValueException::class, MissingServletRequestPartException::class)
-    @ResponseStatus(BAD_REQUEST)
-    fun handleMissingRequestValue(e: Exception): String? {
+    fun handleMissingRequestValue(e: Exception): ResponseEntity<ErrorBody> {
         logger.error("Bad request - missing request value", e)
-        return e.message
+        val e2 = WishlistPublicException(HttpStatus.BAD_REQUEST, e.message?: "missing request value")
+        return handleResponseStatusException(e2)
     }
 
-    @ExceptionHandler(ResponseStatusException::class)
-    fun handleResponseStatusException(e: Exception) {
-        logger.error("Failed with ResponseStatusException.")
-        throw e
+    @ExceptionHandler(WishlistPublicException::class)
+    fun handleResponseStatusException(e: WishlistPublicException): ResponseEntity<ErrorBody>{
+        logger.error("Failed with ${e.message}.")
+        return ResponseEntity(e.body, e.status)
     }
 
     @ExceptionHandler(Throwable::class)
-    @ResponseStatus(INTERNAL_SERVER_ERROR)
-    fun handleAnyException(t: Throwable): String? {
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    fun handleAnyException(t: Throwable) {
         logger.error("Internal server error", t)
-        return t.message
+        throw WishlistPublicException(HttpStatus.INTERNAL_SERVER_ERROR, t.message?: "Internal server error")
     }
 }
 

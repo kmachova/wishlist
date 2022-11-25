@@ -1,7 +1,7 @@
 package dk.cngroup.wishlist.service
 
-import dk.cngroup.wishlist.ClientUsernameNotFoundException
-import dk.cngroup.wishlist.ProductCodeNotFoundException
+import dk.cngroup.wishlist.exception.ClientUsernameNotFoundException
+import dk.cngroup.wishlist.exception.ProductCodeNotFoundException
 import dk.cngroup.wishlist.entity.Client
 import dk.cngroup.wishlist.entity.ClientRepository
 import dk.cngroup.wishlist.entity.ProductRepository

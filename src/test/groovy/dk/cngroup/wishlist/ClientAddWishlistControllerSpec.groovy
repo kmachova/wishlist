@@ -1,8 +1,11 @@
 package dk.cngroup.wishlist
 
+import dk.cngroup.wishlist.exception.ClientUsernameNotFoundException
+import dk.cngroup.wishlist.exception.InvalidCsvLinesExceptionCsvWishesImportException
+import dk.cngroup.wishlist.exception.InvalidProductCodesInFileExceptionCsvWishesImportException
+import dk.cngroup.wishlist.exception.WishlistPublicException
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.web.multipart.support.MissingServletRequestPartException
-import org.springframework.web.server.ResponseStatusException
 import spock.lang.Shared
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson
@@ -113,7 +116,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
                 .getResolvedException()
 
         and:
-        exception instanceof ResponseStatusException
+        exception instanceof WishlistPublicException
         exception.message == errorMessage400('File with wishes is empty')
     }
 
@@ -124,8 +127,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         def productCodesCsv =
                 mockCsvFile("$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE,,\n$TIE_FIGHTER_CODE$randomColumns")
 
-        def expectedMessage = "Some of csv lines are invalid: [Line 2: Too many columns (3). Maximum is: 2., " +
-                "Line 3: Too many columns ($randomColumnsN). Maximum is: 2.]"
+        def expectedMessage = "Some of csv lines are invalid."
 
         when:
         def results = mockMvc.perform(multipart(addWishlistPath)
@@ -138,15 +140,13 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
                 .getResolvedException()
 
         and:
-        exception instanceof InvalidCsvLinesException
+        exception instanceof InvalidCsvLinesExceptionCsvWishesImportException
         exception.message == errorMessage400(expectedMessage)
-
     }
 
     def 'should fail when product code is: #name'() {
         given:
-        def expectedMessage = "Some of csv lines are invalid: [Line 2: Field 'code' is mandatory but no value was provided., " +
-                "Line 4: Field 'code' is mandatory but no value was provided.]"
+        def expectedMessage = "Some of csv lines are invalid."
 
         def productCodesCsv = mockCsvFile(fileContent)
 
@@ -161,7 +161,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
                 .getResolvedException()
 
         and:
-        exception instanceof InvalidCsvLinesException
+        exception instanceof InvalidCsvLinesExceptionCsvWishesImportException
         exception.message == errorMessage400(expectedMessage)
 
         where:
@@ -175,8 +175,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         productRepository.saveAllAndFlush([deathStar, starDestroyer, tieFighter])
         def nonExistingProductCodes = (0..<2).collect { randomProductCode() }
 
-        def expectedMessage = "Wishlist was not created since some of products specified in the file do not exist: " +
-                "[Line 3: code=${nonExistingProductCodes[0]}, color=null, Line 5: code=${nonExistingProductCodes[1]}, color=null]"
+        def expectedMessage = "Wishlist was not created since some of products specified in the file do not exist."
 
         def productCodesCsv = mockCsvFile([
                 DEATH_STAR_CODE,
@@ -197,7 +196,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
                 .getResolvedException()
 
         and:
-        exception instanceof InvalidProductCodesInFileException
+        exception instanceof InvalidProductCodesInFileExceptionCsvWishesImportException
         exception.message == errorMessage400(expectedMessage)
     }
 
@@ -217,8 +216,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
                 .getResolvedException()
 
         and:
-        exception instanceof InvalidProductCodesInFileException
-        exception.message.contains("Line 1: code=${unexactCode}")
+        exception instanceof InvalidProductCodesInFileExceptionCsvWishesImportException
 
         and: 'wishlist with the original code can be added'
         mockMvc.perform(multipart(addWishlistPath)
@@ -242,8 +240,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         def productCodesCsv = mockCsvFile(
                 "$STAR_DESTROYER_CODE\n$DEATH_STAR_CODE,pink\n$TIE_FIGHTER_CODE,$anyColor")
 
-        def expectedMessage = "Wishlist was not created since some of products specified in the file do not exist: " +
-                "[Line 2: code=$DEATH_STAR_CODE, color=pink, Line 3: code=$TIE_FIGHTER_CODE, color=$anyColor]"
+        def expectedMessage = "Wishlist was not created since some of products specified in the file do not exist."
 
         when:
         def results = mockMvc.perform(multipart(addWishlistPath)
@@ -256,7 +253,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
                 .getResolvedException()
 
         and:
-        exception instanceof InvalidProductCodesInFileException
+        exception instanceof InvalidProductCodesInFileExceptionCsvWishesImportException
         exception.message == errorMessage400(expectedMessage)
     }
 

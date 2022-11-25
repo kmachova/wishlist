@@ -1,19 +1,20 @@
 package dk.cngroup.wishlist.service
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.opencsv.bean.CsvToBean
 import com.opencsv.bean.CsvToBeanBuilder
 import com.opencsv.exceptions.CsvException
-import dk.cngroup.wishlist.InvalidCsvLinesException
-import dk.cngroup.wishlist.InvalidProductCodesInFileException
+import dk.cngroup.wishlist.exception.InvalidProductCodesInFileExceptionCsvWishesImportException
 import dk.cngroup.wishlist.entity.Product
 import dk.cngroup.wishlist.entity.ProductRepository
 import dk.cngroup.wishlist.entity.Wishlist
+import dk.cngroup.wishlist.exception.InvalidCsvLinesExceptionCsvWishesImportException
+import dk.cngroup.wishlist.exception.WishlistPublicException
 import org.springframework.data.domain.Example
 import org.springframework.data.domain.ExampleMatcher
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
-import org.springframework.web.server.ResponseStatusException
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
@@ -34,11 +35,11 @@ class ReadWishlistService(private val productRepository: ProductRepository) {
             .splitByPresenceInRepo()
         if (productsFromFile.allValid) {
             return Wishlist(products = productsFromFile.passedProducts)
-        } else throw InvalidProductCodesInFileException(productsFromFile.failedProducts)
+        } else throw InvalidProductCodesInFileExceptionCsvWishesImportException(productsFromFile.failedProducts)
     }
 
     fun getProductsFromFile(file: MultipartFile): List<Product> {
-        if (file.isEmpty) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "File with wishes is empty")
+        if (file.isEmpty) throw WishlistPublicException(HttpStatus.BAD_REQUEST, "File with wishes is empty")
 
         InputStreamReader(file.inputStream).buffered().use {
             return csvToProducts(it)
@@ -46,7 +47,7 @@ class ReadWishlistService(private val productRepository: ProductRepository) {
     }
 
     private fun List<Product>.splitByPresenceInRepo(): ProductsFromCsv {
-        val invalidProductsCodes = mutableMapOf<Int, Product>()
+        val invalidProducts = mutableListOf<FailedProduct>()
         val validProducts = mutableListOf<Product>()
 
         this.forEachIndexed { index, product ->
@@ -58,11 +59,11 @@ class ReadWishlistService(private val productRepository: ProductRepository) {
             val results = productRepository.findAll(example)
 
             when (results.size) {
-                0 -> invalidProductsCodes[index + 1] = product
+                0 -> invalidProducts.add(FailedProduct(index + 1, product))
                 else -> validProducts.add(results[0])
             }
         }
-        return ProductsFromCsv(validProducts, invalidProductsCodes)
+        return ProductsFromCsv(validProducts, invalidProducts)
     }
 
     private fun csvToProducts(fileReader: BufferedReader?): List<Product> =
@@ -86,14 +87,33 @@ class ReadWishlistService(private val productRepository: ProductRepository) {
         val products = this.parse()
         val exceptions = this.capturedExceptions
 
-        if (exceptions.size == 0) {
-            return products
-        } else throw InvalidCsvLinesException(exceptions)
+        if (exceptions.size == 0)
+            return products else throw InvalidCsvLinesExceptionCsvWishesImportException(exceptions.extractBasicInfo())
     }
+
+    fun List<CsvException>.extractBasicInfo(): List<CsvExceptionBasicInfo> =
+        this.map {
+            CsvExceptionBasicInfo(it.lineNumber, it.message ?: "Unknown")
+        }
 }
 
 data class ProductsFromCsv(
     val passedProducts: MutableList<Product>,
-    val failedProducts: Map<Int, Product>,
+    val failedProducts: List<FailedProduct>,
     val allValid: Boolean = failedProducts.isEmpty()
 )
+
+data class FailedProduct(
+    @JsonProperty("line")
+    val lineNumber: Int,
+    val product: Product
+)
+
+
+data class CsvExceptionBasicInfo(
+    @JsonProperty("line")
+    val lineNumber: Long,
+    val cause: String
+)
+
+

@@ -1,5 +1,6 @@
 package dk.cngroup.wishlist
 
+import dk.cngroup.wishlist.exception.ProductCodeNotFoundException
 import org.springframework.web.bind.MissingServletRequestParameterException
 
 import static net.javacrumbs.jsonunit.core.ConfigurationWhen.thenIgnore
