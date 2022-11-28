@@ -6,6 +6,7 @@ import org.springframework.web.util.UriTemplate
 import groovy.text.SimpleTemplateEngine
 
 class TestUtils {
+
     private static final TEMPLATE_ENGINE = new SimpleTemplateEngine()
     private static final String TEST_RESOURCE_PATH = 'src/test/resources'
     private static final String ERROR_TEMPLATE = fileToText("$TEST_RESOURCE_PATH/json_templates/errorResponse.json")
@@ -23,9 +24,9 @@ class TestUtils {
         fileToText("$TEST_RESOURCE_PATH/$pathInResources/${fileName}.json")
     }
 
-    static String expectedError(HttpStatus status, String message = '${json-unit.any-string}', List<String> params = []) {
+    static String expectedError(HttpStatus status, String message = '#{json-unit.any-string}', List<String> params = []) {
         def paramsString = params.size() == 0 ?
-                '' : ",\nparameters:[${params.collect { '\n{' + it + '}' }.join(',')}]"
+                '' : ",\nparameters:[${params.collect { param -> '\n{' + param + '}' }.join(',')}]"
 
         def bindMap = [
                 status    : status.reasonPhrase,
@@ -36,12 +37,12 @@ class TestUtils {
         getTemplated(ERROR_TEMPLATE, bindMap)
     }
 
-    static String getTemplated(String template, bindMap) {
+    static String getTemplated(String template, Map bindMap) {
         TEMPLATE_ENGINE.createTemplate(template).make(bindMap).toString()
     }
 
     static List<String> getTemplatedList(String template, List<Map> maps) {
-        maps.collect { getTemplated(template, it) }
+        maps.collect { map -> getTemplated(template, map) }
     }
 
     static String extractResponseBody(ResultActions response) {
@@ -56,4 +57,5 @@ class TestUtils {
                 .andReturn()
                 .getResolvedException()
     }
+
 }

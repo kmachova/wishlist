@@ -6,7 +6,13 @@ import org.hibernate.annotations.Where
 import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.rest.core.annotation.RestResource
-import javax.persistence.*
+import javax.persistence.CascadeType
+import javax.persistence.Entity
+import javax.persistence.GeneratedValue
+import javax.persistence.GenerationType
+import javax.persistence.Id
+import javax.persistence.OneToMany
+import javax.persistence.OrderColumn
 
 @Entity //all SELECT statements will be enhanced by given where condition; cannot be inherited from parent class
 @Where(clause = "active = true")
@@ -42,7 +48,6 @@ interface ClientRepository : JpaRepository<Client, Long> {
     @EntityGraph(attributePaths = ["wishes.products"])
     fun findClientByUserName(userName: String): Client
 
-    //@Query(value = "SELECT DISTINCT c FROM Client c JOIN c.wishes w JOIN w.products p WHERE p.code = ?1 ORDER BY c.userName")
     @EntityGraph(attributePaths = ["wishes.products"])
     fun findDistinctByWishesProductsCodeIgnoreCaseOrderByUserName(productCode: String): List<Client>?
 }

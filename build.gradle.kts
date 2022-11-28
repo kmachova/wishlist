@@ -4,10 +4,12 @@ import org.springframework.boot.gradle.tasks.bundling.BootJar
 plugins {
     id("org.springframework.boot") version "2.7.5"
     id("io.spring.dependency-management") version "1.0.15.RELEASE"
+    id("io.gitlab.arturbosch.detekt").version("1.17.0")
     kotlin("jvm") version "1.7.20"
     kotlin("plugin.jpa") version "1.7.20"
     kotlin("plugin.spring") version "1.7.20"
     groovy
+    codenarc
 }
 
 group = "dk.cngroup.wishlist"
@@ -79,3 +81,15 @@ tasks.withType<KotlinCompile> {
 tasks.withType<Test> {
     useJUnitPlatform()
 }
+
+codenarc {
+    toolVersion = "3.1.0"
+    configFile = file("${rootProject.projectDir}/config/codenarc/ruleset")
+    reportFormat = "html"
+}
+
+detekt {
+    config = files("${rootProject.projectDir}/config/detekt/detekt.yml")
+    buildUponDefaultConfig = true
+}
+

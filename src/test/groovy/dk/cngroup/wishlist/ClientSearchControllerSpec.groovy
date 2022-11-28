@@ -23,6 +23,7 @@ import static org.hamcrest.text.MatchesPattern.matchesPattern
 import static dk.cngroup.wishlist.TestUtils.responseJsonToString
 
 class ClientSearchControllerSpec extends BaseSpec {
+
     private static final PRODUCT_CODE_PARAM = 'productCode'
     private static final CLIENTS_SEARCH_PATH = '/clients/search'
 
@@ -194,5 +195,5 @@ class ClientSearchControllerSpec extends BaseSpec {
         'missing' | CLIENTS_SEARCH_PATH
         'flag'    | "$CLIENTS_SEARCH_PATH?$PRODUCT_CODE_PARAM"
     }
-}
 
+}

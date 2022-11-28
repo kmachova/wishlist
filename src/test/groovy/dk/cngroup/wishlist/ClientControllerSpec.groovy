@@ -12,7 +12,7 @@ class ClientControllerSpec extends BaseSpec {
         clientRepository.save(vader)
 
         when:
-        def response = mockMvc.perform(get("/clients/client-management/DARTH_VADER"))
+        def response = mockMvc.perform(get("/clients/client-management/$VADER_USERNAME"))
 
         then:
         response.andExpect(status().isOk())
@@ -21,10 +21,10 @@ class ClientControllerSpec extends BaseSpec {
 
     def '404 is returned for invalid userName'() {
         when:
-        def response = mockMvc.perform(get("/clients/client-management/FOO"))
+        def response = mockMvc.perform(get('/clients/client-management/FOO'))
 
         then:
         response.andExpect(status().isNotFound())
     }
-}
 
+}

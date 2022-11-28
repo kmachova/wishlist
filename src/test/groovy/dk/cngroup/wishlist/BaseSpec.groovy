@@ -20,22 +20,23 @@ import static dk.cngroup.wishlist.TestUtils.responseJsonToString
 @Transactional
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
+@SuppressWarnings('StaticFieldsBeforeInstanceFields')
 class BaseSpec extends Specification {
 
     @Autowired
-    MockMvc mockMvc
+    protected MockMvc mockMvc
 
     @Autowired
-    ClientRepository clientRepository
+    protected ClientRepository clientRepository
 
     @Autowired
-    ProductRepository productRepository
+    protected ProductRepository productRepository
 
     @Autowired
-    WishlistRepository wishlistRepository
+    protected WishlistRepository wishlistRepository
 
     @Autowired
-    EntityManager entityManager
+    protected EntityManager entityManager
 
     protected static final FAKER = new Faker()
     protected static final DEATH_STAR_CODE = 'Death Star'
@@ -45,26 +46,26 @@ class BaseSpec extends Specification {
     protected static final VADER_USERNAME = 'DARTH_VADER'
     protected static final VADER_JSON = responseJsonToString('DarthVaderWithWishesAndPlaceHolders')
 
-    protected createProduct(String code, String color = null) { new Product(null, code, color) }
+    protected constructProduct(String code, String color = null) { new Product(null, code, color) }
 
-    private createClient(String firstName, String lastName, List<Wishlist> wishlist = []) {
+    private constructClient(String firstName, String lastName, List<Wishlist> wishlist = []) {
         new Client(null, true, firstName, lastName, wishlist)
     }
 
-    protected tieFighter = createProduct(TIE_FIGHTER_CODE)
-    protected deathStar = createProduct(DEATH_STAR_CODE, 'black')
-    protected starDestroyer = createProduct(STAR_DESTROYER_CODE)
-    private sand = createProduct('sand')
+    protected tieFighter = constructProduct(TIE_FIGHTER_CODE)
+    protected deathStar = constructProduct(DEATH_STAR_CODE, 'black')
+    protected starDestroyer = constructProduct(STAR_DESTROYER_CODE)
+    private final sand = constructProduct('sand')
 
     protected wishlist3Products = new Wishlist(products: [deathStar, starDestroyer, tieFighter])
     protected wishlist2Products = new Wishlist(products: [deathStar, starDestroyer])
     protected wishlist1Product = new Wishlist(products: [deathStar])
 
-    protected vader = createClient("Darth", "Vader")
-    private ren = createClient("Kylo", "Ren")
-    protected skywalker = createClient("Luke", "Skywalker")
+    protected vader = constructClient('Darth', 'Vader')
+    private final ren = constructClient('Kylo', 'Ren')
+    protected skywalker = constructClient('Luke', 'Skywalker')
 
-    def fullSetup() {
+    protected void fullSetup() {
         vader.addWishlist(wishlist3Products)
         ren.addWishlist(wishlist2Products)
         skywalker.addWishlist(wishlist1Product)
@@ -72,11 +73,12 @@ class BaseSpec extends Specification {
         productRepository.save(sand)
     }
 
-    String randomProductCode() {
+    protected String randomProductCode() {
         FAKER.bothify("non-exist code ${'#'.repeat(10)}${'?'.repeat(10)}${'#'.repeat(10)}")
     }
 
-    String randomUserName() {
+    protected String randomUserName() {
         FAKER.letterify("${'?'.repeat(20)}_${'?'.repeat(10)}", true)
     }
+
 }

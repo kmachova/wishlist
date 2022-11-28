@@ -1,7 +1,6 @@
 package dk.cngroup.wishlist.entity
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import com.opencsv.bean.CsvBindByName
 import com.opencsv.bean.CsvBindByPosition
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.rest.core.annotation.Description

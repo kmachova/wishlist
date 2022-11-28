@@ -5,8 +5,10 @@ import dk.cngroup.wishlist.exception.ProductCodeNotFoundException
 import dk.cngroup.wishlist.entity.Client
 import dk.cngroup.wishlist.entity.ClientRepository
 import dk.cngroup.wishlist.entity.ProductRepository
+import org.springframework.dao.EmptyResultDataAccessException
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
+import java.lang.NullPointerException
 import javax.persistence.EntityManager
 
 @Service
@@ -39,10 +41,11 @@ class ClientService(
         return client
     }
 
+    @Suppress("SwallowedException")
     private fun getByUsername(username: String): Client {
         val client = try {
             clientRepository.findClientByUserName(username)
-        } catch (e: Exception) {
+        } catch (e: EmptyResultDataAccessException) {
             throw ClientUsernameNotFoundException(username)
         }
         return client

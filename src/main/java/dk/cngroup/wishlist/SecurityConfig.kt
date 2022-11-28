@@ -38,3 +38,5 @@ class SecurityConfig : AuditorAware<String> {
         return Optional.ofNullable(authentication?.name)
     }
 }
+
+

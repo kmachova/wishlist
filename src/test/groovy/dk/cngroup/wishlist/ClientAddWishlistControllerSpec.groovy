@@ -22,8 +22,9 @@ import static dk.cngroup.wishlist.TestUtils.pathFromTemplate
 import static dk.cngroup.wishlist.TestUtils.extractException
 
 class ClientAddWishlistControllerSpec extends BaseSpec {
+
     private static final FILE_PARAM = 'csv'
-    private static final ADD_WISHLIST_TEMPLATE = "/clients/client-management/{username}/addWishlist"
+    private static final ADD_WISHLIST_TEMPLATE = '/clients/client-management/{username}/addWishlist'
 
     private static final NON_EXISTING_PRODUCT_MESSAGE =
             'Wishlist was not created since some of products specified in the file do not exist.'
@@ -49,11 +50,10 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         then:
         response.andExpect(status().isOk())
 
-
         and: 'wishlist was saved and linked to correct client'
-        clientRepository.findByUserName(VADER_USERNAME).wishes[0].products.with {
-            collect { product -> product.code } == [DEATH_STAR_CODE, STAR_DESTROYER_CODE, TIE_FIGHTER_CODE]
-            collect { product -> product.color } == ['black', null, null]
+        clientRepository.findByUserName(VADER_USERNAME).wishes[0].products.with { products ->
+            products*.code == [DEATH_STAR_CODE, STAR_DESTROYER_CODE, TIE_FIGHTER_CODE]
+            products*.color == ['black', null, null]
         }
 
         and: 'response contains client with new wishlist in correct format'
@@ -95,7 +95,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         def productCode = "${FAKER.space().galaxy()},${FAKER.space().nebula()}".toString()
         def color = "${FAKER.color().name()}, ${FAKER.color().name()} and ${FAKER.color().name()}".toString()
 
-        productRepository.save(createProduct(productCode, color))
+        productRepository.save(constructProduct(productCode, color))
         clientRepository.save(vader)
 
         when:
@@ -107,7 +107,6 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath('$.wishes[0].products[0].code').value(productCode))
                 .andExpect(jsonPath('$.wishes[0].products[0].color').value(color))
-
     }
 
     def 'should fail when file with wishes is empty'() {
@@ -116,7 +115,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
 
         and:
         def productCodesCsv =
-                mockCsvFile("")
+                mockCsvFile('')
 
         when:
         def response = mockMvc.perform(multipart(addWishlistPath)
@@ -259,7 +258,6 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         'valid code at the end'       | " $DEATH_STAR_CODE"
         'valid code in the middle'    | " $DEATH_STAR_CODE "
         'regex'                       | DEATH_STAR_CODE.replace('a', '.')
-
     }
 
     def 'should fail when some of products have non-matching color'() {
@@ -274,7 +272,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         and:
         def expectedStatus = HttpStatus.BAD_REQUEST
         def expectedErrorMessage =
-                "Wishlist was not created since some of products specified in the file do not exist."
+                'Wishlist was not created since some of products specified in the file do not exist.'
         def expectedParams = getTemplatedList(
                 'line:${line},product:{code:"${code}",color:"${color}"}',
                 [[line: 2, code: DEATH_STAR_CODE, color: starNonMatchingColor], [line: 3, code: TIE_FIGHTER_CODE, color: anyColor]]
@@ -345,4 +343,5 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
     def mockCsvFile(String content) {
         new MockMultipartFile('csv', null, 'text/csv', content.getBytes())
     }
+
 }
