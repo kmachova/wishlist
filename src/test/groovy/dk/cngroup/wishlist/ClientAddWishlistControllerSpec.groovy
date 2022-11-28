@@ -4,20 +4,31 @@ import dk.cngroup.wishlist.exception.ClientUsernameNotFoundException
 import dk.cngroup.wishlist.exception.InvalidCsvLinesExceptionCsvWishesImportException
 import dk.cngroup.wishlist.exception.InvalidProductCodesInFileExceptionCsvWishesImportException
 import dk.cngroup.wishlist.exception.WishlistPublicException
+import org.springframework.http.HttpStatus
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.web.multipart.support.MissingServletRequestPartException
 import spock.lang.Shared
 
+import static dk.cngroup.wishlist.TestUtils.expectedError
+import static dk.cngroup.wishlist.TestUtils.extractResponseBody
+import static dk.cngroup.wishlist.TestUtils.getTemplatedList
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize
 import static org.hamcrest.text.MatchesPattern.matchesPattern
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import static dk.cngroup.wishlist.TestUtils.pathFromTemplate
+import static dk.cngroup.wishlist.TestUtils.extractException
 
 class ClientAddWishlistControllerSpec extends BaseSpec {
     private static final FILE_PARAM = 'csv'
     private static final ADD_WISHLIST_TEMPLATE = "/clients/client-management/{username}/addWishlist"
+
+    private static final NON_EXISTING_PRODUCT_MESSAGE =
+            'Wishlist was not created since some of products specified in the file do not exist.'
+
+    private static final INVALID_CSV_MESSAGE = 'Some of csv lines are invalid.'
 
     @Shared
     private final addWishlistPath = pathFromTemplate(ADD_WISHLIST_TEMPLATE, VADER_USERNAME)
@@ -32,15 +43,12 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         def file = mockCsvFile(productInfo)
 
         when:
-        def results = mockMvc.perform(multipart(addWishlistPath)
+        def response = mockMvc.perform(multipart(addWishlistPath)
                 .file(file))
 
         then:
-        def response = results
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString()
+        response.andExpect(status().isOk())
+
 
         and: 'wishlist was saved and linked to correct client'
         clientRepository.findByUserName(VADER_USERNAME).wishes[0].products.with {
@@ -49,7 +57,9 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         }
 
         and: 'response contains client with new wishlist in correct format'
-        assertThatJson(response)
+        def responseBody = extractResponseBody(response)
+
+        assertThatJson(responseBody)
                 .withMatcher('timeStampRegex', matchesPattern('[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[0-9.]*'))
                 .isEqualTo(VADER_JSON)
 
@@ -71,11 +81,11 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         clientRepository.save(vader)
 
         when:
-        def results = mockMvc.perform(multipart(addWishlistPath)
+        def response = mockMvc.perform(multipart(addWishlistPath)
                 .file(minimalCsvFile))
 
         then: 'number of wishlists was increased by 1'
-        results
+        response
                 .andExpect(status().isOk())
                 .andExpect(jsonPath('$.wishes', hasSize(3)))
     }
@@ -89,11 +99,11 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         clientRepository.save(vader)
 
         when:
-        def results = mockMvc.perform(multipart(addWishlistPath)
+        def response = mockMvc.perform(multipart(addWishlistPath)
                 .file(mockCsvFile("\"$productCode\",\"$color\"")))
 
         then:
-        results
+        response
                 .andExpect(status().isOk())
                 .andExpect(jsonPath('$.wishes[0].products[0].code').value(productCode))
                 .andExpect(jsonPath('$.wishes[0].products[0].color').value(color))
@@ -102,22 +112,24 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
 
     def 'should fail when file with wishes is empty'() {
         given:
+        def expectedStatus = HttpStatus.BAD_REQUEST
+
+        and:
         def productCodesCsv =
                 mockCsvFile("")
 
         when:
-        def results = mockMvc.perform(multipart(addWishlistPath)
+        def response = mockMvc.perform(multipart(addWishlistPath)
                 .file(productCodesCsv))
 
         then:
-        def exception = results
-                .andExpect(status().isBadRequest())
-                .andReturn()
-                .getResolvedException()
+        response.andExpect(
+                status().is(expectedStatus.value())
+        )
 
-        and:
-        exception instanceof WishlistPublicException
-        exception.message == errorMessage400('File with wishes is empty')
+        extractException(response) instanceof WishlistPublicException
+        assertThatJson(extractResponseBody(response))
+                .isEqualTo(expectedError(expectedStatus, 'File with wishes is empty'))
     }
 
     def 'should fail when some of rows contain too many columns'() {
@@ -127,42 +139,50 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         def productCodesCsv =
                 mockCsvFile("$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE,,\n$TIE_FIGHTER_CODE$randomColumns")
 
-        def expectedMessage = "Some of csv lines are invalid."
+        and:
+        def expectedStatus = HttpStatus.BAD_REQUEST
+        def expectedParams = ['line:2,cause:"Too many columns (3). Maximum is: 2."',
+                              'line:3,cause:"Too many columns (15). Maximum is: 2."']
 
         when:
-        def results = mockMvc.perform(multipart(addWishlistPath)
+        def response = mockMvc.perform(multipart(addWishlistPath)
                 .file(productCodesCsv))
 
         then:
-        def exception = results
-                .andExpect(status().isBadRequest())
-                .andReturn()
-                .getResolvedException()
+        response.andExpect(
+                status().is(expectedStatus.value())
+        )
 
         and:
-        exception instanceof InvalidCsvLinesExceptionCsvWishesImportException
-        exception.message == errorMessage400(expectedMessage)
+        extractException(response) instanceof InvalidCsvLinesExceptionCsvWishesImportException
+        assertThatJson(extractResponseBody(response))
+                .isEqualTo(expectedError(expectedStatus, INVALID_CSV_MESSAGE, expectedParams))
     }
 
     def 'should fail when product code is: #name'() {
         given:
-        def expectedMessage = "Some of csv lines are invalid."
-
         def productCodesCsv = mockCsvFile(fileContent)
 
+        and:
+        def expectedStatus = HttpStatus.BAD_REQUEST
+        def expectedParams = getTemplatedList(
+                'cause:"Field \'code\' is mandatory but no value was provided.",line:${line}',
+                [[line: 2], [line: 4]]
+        )
+
         when:
-        def results = mockMvc.perform(multipart(addWishlistPath)
+        def response = mockMvc.perform(multipart(addWishlistPath)
                 .file(productCodesCsv))
 
         then:
-        def exception = results
-                .andExpect(status().isBadRequest())
-                .andReturn()
-                .getResolvedException()
+        response.andExpect(
+                status().is(expectedStatus.value())
+        )
 
         and:
-        exception instanceof InvalidCsvLinesExceptionCsvWishesImportException
-        exception.message == errorMessage400(expectedMessage)
+        extractException(response) instanceof InvalidCsvLinesExceptionCsvWishesImportException
+        assertThatJson(extractResponseBody(response))
+                .isEqualTo(expectedError(expectedStatus, INVALID_CSV_MESSAGE, expectedParams))
 
         where:
         name    | fileContent
@@ -175,8 +195,6 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         productRepository.saveAllAndFlush([deathStar, starDestroyer, tieFighter])
         def nonExistingProductCodes = (0..<2).collect { randomProductCode() }
 
-        def expectedMessage = "Wishlist was not created since some of products specified in the file do not exist."
-
         def productCodesCsv = mockCsvFile([
                 DEATH_STAR_CODE,
                 TIE_FIGHTER_CODE,
@@ -185,19 +203,26 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
                 nonExistingProductCodes[1]
         ].join('\n'))
 
+        and:
+        def expectedStatus = HttpStatus.BAD_REQUEST
+        def expectedParams = getTemplatedList(
+                'line:${line},product:{code:"${code}"}',
+                [[line: 3, code: nonExistingProductCodes[0]], [line: 5, code: nonExistingProductCodes[1]]]
+        )
+
         when:
-        def results = mockMvc.perform(multipart(addWishlistPath)
+        def response = mockMvc.perform(multipart(addWishlistPath)
                 .file(productCodesCsv))
 
         then:
-        def exception = results
-                .andExpect(status().isBadRequest())
-                .andReturn()
-                .getResolvedException()
+        response.andExpect(
+                status().is(expectedStatus.value())
+        )
 
         and:
-        exception instanceof InvalidProductCodesInFileExceptionCsvWishesImportException
-        exception.message == errorMessage400(expectedMessage)
+        extractException(response) instanceof InvalidProductCodesInFileExceptionCsvWishesImportException
+        assertThatJson(extractResponseBody(response))
+                .isEqualTo(expectedError(expectedStatus, NON_EXISTING_PRODUCT_MESSAGE, expectedParams))
     }
 
     def 'should not support partial matches: #name'() {
@@ -205,18 +230,23 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         productRepository.saveAndFlush(deathStar)
         clientRepository.saveAndFlush(vader)
 
+        and:
+        def expectedStatus = HttpStatus.BAD_REQUEST
+        def expectedParams = ["line:1,product:{code:'$unexactCode'}"]
+
         when:
-        def results = mockMvc.perform(multipart(addWishlistPath)
+        def response = mockMvc.perform(multipart(addWishlistPath)
                 .file(mockCsvFile(unexactCode)))
 
         then:
-        def exception = results
-                .andExpect(status().isBadRequest())
-                .andReturn()
-                .getResolvedException()
+        response.andExpect(
+                status().is(expectedStatus.value())
+        )
 
         and:
-        exception instanceof InvalidProductCodesInFileExceptionCsvWishesImportException
+        extractException(response) instanceof InvalidProductCodesInFileExceptionCsvWishesImportException
+        assertThatJson(extractResponseBody(response))
+                .isEqualTo(expectedError(expectedStatus, NON_EXISTING_PRODUCT_MESSAGE, expectedParams))
 
         and: 'wishlist with the original code can be added'
         mockMvc.perform(multipart(addWishlistPath)
@@ -237,24 +267,32 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         productRepository.saveAll([deathStar, starDestroyer, tieFighter])
 
         def anyColor = FAKER.color().name()
+        def starNonMatchingColor = 'pink'
         def productCodesCsv = mockCsvFile(
-                "$STAR_DESTROYER_CODE\n$DEATH_STAR_CODE,pink\n$TIE_FIGHTER_CODE,$anyColor")
+                "$STAR_DESTROYER_CODE\n$DEATH_STAR_CODE,$starNonMatchingColor\n$TIE_FIGHTER_CODE,$anyColor")
 
-        def expectedMessage = "Wishlist was not created since some of products specified in the file do not exist."
+        and:
+        def expectedStatus = HttpStatus.BAD_REQUEST
+        def expectedErrorMessage =
+                "Wishlist was not created since some of products specified in the file do not exist."
+        def expectedParams = getTemplatedList(
+                'line:${line},product:{code:"${code}",color:"${color}"}',
+                [[line: 2, code: DEATH_STAR_CODE, color: starNonMatchingColor], [line: 3, code: TIE_FIGHTER_CODE, color: anyColor]]
+        )
 
         when:
-        def results = mockMvc.perform(multipart(addWishlistPath)
+        def response = mockMvc.perform(multipart(addWishlistPath)
                 .file(productCodesCsv))
 
         then:
-        def exception = results
-                .andExpect(status().isBadRequest())
-                .andReturn()
-                .getResolvedException()
+        response.andExpect(
+                status().is(expectedStatus.value())
+        )
 
         and:
-        exception instanceof InvalidProductCodesInFileExceptionCsvWishesImportException
-        exception.message == errorMessage400(expectedMessage)
+        extractException(response) instanceof InvalidProductCodesInFileExceptionCsvWishesImportException
+        assertThatJson(extractResponseBody(response))
+                .isEqualTo(expectedError(expectedStatus, expectedErrorMessage, expectedParams))
     }
 
     def 'should fail when client does not exist'() {
@@ -265,34 +303,38 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
 
         def path = pathFromTemplate(ADD_WISHLIST_TEMPLATE, nonExistingUsername)
 
+        and:
+        def expectedStatus = HttpStatus.NOT_FOUND
+
         when:
-        def results = mockMvc.perform(multipart(path)
+        def response = mockMvc.perform(multipart(path)
                 .file(minimalCsvFile))
 
         then:
-        def exception = results
-                .andExpect(status().isNotFound())
-                .andReturn()
-                .getResolvedException()
+        response.andExpect(status().isNotFound())
 
         and:
-        exception instanceof ClientUsernameNotFoundException
-        exception.message == errorMessage404("Client with username '$nonExistingUsername' does not exist")
+        extractException(response) instanceof ClientUsernameNotFoundException
+        assertThatJson(extractResponseBody(response))
+                .isEqualTo(expectedError(expectedStatus, "Client with username '$nonExistingUsername' does not exist"))
     }
 
     def 'should fail when productCode param is #name'() {
+        given:
+        def expectedStatus = HttpStatus.BAD_REQUEST
+
         when:
-        def results = mockMvc.perform(multipart(path))
+        def response = mockMvc.perform(multipart(path))
 
         then:
-        def exception = results
-                .andExpect(status().isBadRequest())
-                .andReturn()
-                .getResolvedException()
+        response.andExpect(
+                status().is(expectedStatus.value())
+        )
 
         and:
-        exception instanceof MissingServletRequestPartException
-        exception.message == "Required request part 'csv' is not present"
+        extractException(response) instanceof MissingServletRequestPartException
+        assertThatJson(extractResponseBody(response))
+                .isEqualTo(expectedError(expectedStatus, 'Required request part \'csv\' is not present'))
 
         where:
         name      | path

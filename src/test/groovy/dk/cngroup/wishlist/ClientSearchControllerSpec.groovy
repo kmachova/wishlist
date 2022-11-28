@@ -1,8 +1,12 @@
 package dk.cngroup.wishlist
 
 import dk.cngroup.wishlist.exception.ProductCodeNotFoundException
+import org.springframework.http.HttpStatus
 import org.springframework.web.bind.MissingServletRequestParameterException
 
+import static dk.cngroup.wishlist.TestUtils.expectedError
+import static dk.cngroup.wishlist.TestUtils.extractException
+import static dk.cngroup.wishlist.TestUtils.extractResponseBody
 import static net.javacrumbs.jsonunit.core.ConfigurationWhen.thenIgnore
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -16,6 +20,7 @@ import static net.javacrumbs.jsonunit.core.ConfigurationWhen.paths
 import static net.javacrumbs.jsonunit.core.ConfigurationWhen.then
 import static net.javacrumbs.jsonunit.spring.JsonUnitResultMatchers.json
 import static org.hamcrest.text.MatchesPattern.matchesPattern
+import static dk.cngroup.wishlist.TestUtils.responseJsonToString
 
 class ClientSearchControllerSpec extends BaseSpec {
     private static final PRODUCT_CODE_PARAM = 'productCode'
@@ -26,11 +31,11 @@ class ClientSearchControllerSpec extends BaseSpec {
         fullSetup()
 
         when:
-        def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
+        def response = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
                 .queryParam(PRODUCT_CODE_PARAM, productCode))
 
         then:
-        results
+        response
                 .andExpect(status().isOk())
                 .andExpect(jsonPath('$', hasSize(expectedClientCount)))
 
@@ -48,22 +53,24 @@ class ClientSearchControllerSpec extends BaseSpec {
         clientRepository.save(vader)
 
         when:
-        def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
+        def response = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
                 .queryParam(PRODUCT_CODE_PARAM, DEATH_STAR_CODE))
 
         then:
-        def response = results
+        response
                 .andExpect(status().isOk())
+
+        and:
+        def responseBody = response
                 .andReturn()
                 .getResponse()
                 .getContentAsString()
 
-        and:
-        assertThatJson(response)
+        assertThatJson(responseBody)
                 .isArray()
                 .hasSize(1)
 
-        assertThatJson(response)
+        assertThatJson(responseBody)
                 .withMatcher('timeStampRegex', matchesPattern('[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[0-9.]*'))
                 .inPath('$.[0]')
         //.node('[0]')
@@ -74,9 +81,9 @@ class ClientSearchControllerSpec extends BaseSpec {
         def vaderJsonWithMissingFields = responseJsonToString('DarthVaderWithWishesWithMissingFields')
         def pathToProducts = '[0].wishes[0].products[*]'
 
-        assertThatJson(response)
-                .when(path( '[0].id'), thenIgnore())
-                .when(paths( '[0].wishes[0].id', "${pathToProducts}.id"), then(IGNORING_VALUES))
+        assertThatJson(responseBody)
+                .when(path('[0].id'), thenIgnore())
+                .when(paths('[0].wishes[0].id', "${pathToProducts}.id"), then(IGNORING_VALUES))
                 .when(path(pathToProducts), then(IGNORING_EXTRA_FIELDS))
                 .node('[0]')
                 .isEqualTo(vaderJsonWithMissingFields)
@@ -90,11 +97,11 @@ class ClientSearchControllerSpec extends BaseSpec {
         clientRepository.save(vader)
 
         when:
-        def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
+        def response = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
                 .queryParam(PRODUCT_CODE_PARAM, DEATH_STAR_CODE))
 
         then:
-        results
+        response
                 .andExpect(status().isOk())
                 .andExpect(jsonPath('$', hasSize(1)))
                 .andExpect(jsonPath('$[0].lastName').value('Vader'))
@@ -105,11 +112,11 @@ class ClientSearchControllerSpec extends BaseSpec {
         fullSetup()
 
         when:
-        def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
+        def response = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
                 .queryParam(PRODUCT_CODE_PARAM, DEATH_STAR_CODE))
 
         then:
-        results
+        response
                 .andExpect(status().isOk())
                 .andExpect(jsonPath('$[0].userName').value(VADER_USERNAME))
                 .andExpect(jsonPath('$[1].userName').value('KYLO_REN'))
@@ -119,21 +126,24 @@ class ClientSearchControllerSpec extends BaseSpec {
     def 'should return 404 when productCode param does not exist'() {
         given:
         def nonExistingProductCode = randomProductCode()
-        def expectedErrorMessage = errorMessage404("Product code '$nonExistingProductCode' specified in the query parameter does not exist")
+
+        and:
+        def expectedStatus = HttpStatus.NOT_FOUND
+        def expectedErrorMessage = "Product code '$nonExistingProductCode' specified in the query parameter does not exist"
 
         when:
-        def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
+        def response = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
                 .queryParam(PRODUCT_CODE_PARAM, nonExistingProductCode))
 
         then:
-        def exception = results
-                .andExpect(status().isNotFound())
-                .andReturn()
-                .getResolvedException()
+        response.andExpect(
+                status().is(expectedStatus.value())
+        )
 
         and:
-        exception instanceof ProductCodeNotFoundException
-        exception.message == expectedErrorMessage
+        extractException(response) instanceof ProductCodeNotFoundException
+        assertThatJson(extractResponseBody(response))
+                .isEqualTo(expectedError(expectedStatus, expectedErrorMessage))
     }
 
     def 'should not consider case of the productCode param ("#productCode")'() {
@@ -142,11 +152,11 @@ class ClientSearchControllerSpec extends BaseSpec {
         clientRepository.save(vader)
 
         when:
-        def results = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
+        def response = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
                 .queryParam(PRODUCT_CODE_PARAM, productCode))
 
         then:
-        results
+        response
                 .andExpect(status().isOk())
                 .andExpect(jsonPath('$', hasSize(1)))
                 .andExpect(json()
@@ -163,20 +173,21 @@ class ClientSearchControllerSpec extends BaseSpec {
 
     def 'should fail when productCode param is #name'() {
         given:
+        def expectedStatus = HttpStatus.BAD_REQUEST
         def expectedErrorMessage = "Required request parameter 'productCode' for method parameter type String is not present"
 
         when:
-        def results = mockMvc.perform(get(path))
+        def response = mockMvc.perform(get(path))
 
         then:
-        def exception = results
-                .andExpect(status().isBadRequest())
-                .andReturn()
-                .getResolvedException()
+        response.andExpect(
+                status().is(expectedStatus.value())
+        )
 
         and:
-        exception instanceof MissingServletRequestParameterException
-        exception.message == expectedErrorMessage
+        extractException(response) instanceof MissingServletRequestParameterException
+        assertThatJson(extractResponseBody(response))
+                .isEqualTo(expectedError(expectedStatus, expectedErrorMessage))
 
         where:
         name      | path

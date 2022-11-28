@@ -15,10 +15,12 @@ import org.springframework.transaction.annotation.Transactional
 import spock.lang.Specification
 import javax.persistence.EntityManager
 
+import static dk.cngroup.wishlist.TestUtils.responseJsonToString
+
 @Transactional
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
-class BaseSpec extends Specification implements TestUtils {
+class BaseSpec extends Specification {
 
     @Autowired
     MockMvc mockMvc

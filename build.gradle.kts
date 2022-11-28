@@ -51,6 +51,8 @@ dependencies {
     testImplementation("net.javacrumbs.json-unit:json-unit-spring:2.36.0")
     implementation("com.github.javafaker:javafaker:0.12")
     implementation("com.opencsv:opencsv:5.7.1")
+
+    testImplementation("org.codehaus.groovy:groovy-templates:2.0.0")
 }
 
 allOpen {
