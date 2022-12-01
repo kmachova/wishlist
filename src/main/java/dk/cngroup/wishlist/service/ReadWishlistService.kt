@@ -4,11 +4,13 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.opencsv.bean.CsvToBean
 import com.opencsv.bean.CsvToBeanBuilder
 import com.opencsv.exceptions.CsvException
+import dk.cngroup.wishlist.dto.ProductDto
+import dk.cngroup.wishlist.dto.toEntity
 import dk.cngroup.wishlist.exception.InvalidProductCodesInFileExceptionCsvWishesImportException
 import dk.cngroup.wishlist.entity.Product
 import dk.cngroup.wishlist.entity.ProductRepository
 import dk.cngroup.wishlist.entity.Wishlist
-import dk.cngroup.wishlist.exception.InvalidCsvLinesExceptionCsvWishesImportException
+import dk.cngroup.wishlist.exception.InvalidCsvLinesException
 import dk.cngroup.wishlist.exception.WishlistPublicException
 import org.springframework.data.domain.Example
 import org.springframework.data.domain.ExampleMatcher
@@ -32,13 +34,14 @@ class ReadWishlistService(private val productRepository: ProductRepository) {
 
     fun getWishlistFromCsv(file: MultipartFile): Wishlist {
         val productsFromFile = getProductsFromFile(file)
+            .map{product -> product.toEntity()}
             .splitByPresenceInRepo()
         if (productsFromFile.allValid) {
             return Wishlist(products = productsFromFile.passedProducts)
         } else throw InvalidProductCodesInFileExceptionCsvWishesImportException(productsFromFile.failedProducts)
     }
 
-    fun getProductsFromFile(file: MultipartFile): List<Product> {
+    fun getProductsFromFile(file: MultipartFile): List<ProductDto> {
         if (file.isEmpty) throw WishlistPublicException(HttpStatus.BAD_REQUEST, "File with wishes is empty")
 
         InputStreamReader(file.inputStream).buffered().use {
@@ -66,9 +69,9 @@ class ReadWishlistService(private val productRepository: ProductRepository) {
         return ProductsFromCsv(validProducts, invalidProducts)
     }
 
-    private fun csvToProducts(fileReader: BufferedReader?): List<Product> =
-        CsvToBeanBuilder<Product>(fileReader)
-            .withType(Product::class.java)
+    private fun csvToProducts(fileReader: BufferedReader?): List<ProductDto> =
+        CsvToBeanBuilder<ProductDto>(fileReader)
+            .withType(ProductDto::class.java)
             .withIgnoreEmptyLine(true)
             .withFilter { line ->
                 checkNumberOfColumns(line)
@@ -83,12 +86,12 @@ class ReadWishlistService(private val productRepository: ProductRepository) {
         if (!it) throw CsvException("Too many columns (${line.size}). Maximum is: $MAX_COLUMN_NUMBER.")
     }
 
-    private fun CsvToBean<Product>.checkAndParse(): List<Product> {
+    private fun CsvToBean<ProductDto>.checkAndParse(): List<ProductDto> {
         val products = this.parse()
         val exceptions = this.capturedExceptions
 
         if (exceptions.size == 0)
-            return products else throw InvalidCsvLinesExceptionCsvWishesImportException(exceptions.extractBasicInfo())
+            return products else throw InvalidCsvLinesException(exceptions.extractBasicInfo())
     }
 
     fun List<CsvException>.extractBasicInfo(): List<CsvExceptionBasicInfo> =

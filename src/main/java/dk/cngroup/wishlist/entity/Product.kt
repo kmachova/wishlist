@@ -17,12 +17,10 @@ class Product(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long? = null,
 
-    @CsvBindByPosition(position = 0, required = true)
     @Description("Unique name of the item")
     @field:NotNull
     val code: String,
 
-    @CsvBindByPosition(position = 1)
     var color: String? = null
 ) : AuditableEntity() {
     override

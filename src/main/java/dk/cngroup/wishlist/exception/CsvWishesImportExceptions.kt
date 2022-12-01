@@ -10,7 +10,7 @@ open class CsvWishesImportException(message: String, parameters: List<Any>) : Wi
     parameters
 )
 
-class InvalidCsvLinesExceptionCsvWishesImportException(exceptions: List<CsvExceptionBasicInfo>) :
+class InvalidCsvLinesException(exceptions: List<CsvExceptionBasicInfo>) :
     CsvWishesImportException(
         "Some of csv lines are invalid.",
         exceptions

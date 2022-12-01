@@ -1,5 +1,6 @@
 package dk.cngroup.wishlist
 
+import com.github.javafaker.Faker
 import org.springframework.http.HttpStatus
 import org.springframework.test.web.servlet.ResultActions
 import org.springframework.web.util.UriTemplate
@@ -7,6 +8,7 @@ import groovy.text.SimpleTemplateEngine
 
 class TestUtils {
 
+    static final FAKER = new Faker()
     private static final TEMPLATE_ENGINE = new SimpleTemplateEngine()
     private static final String TEST_RESOURCE_PATH = 'src/test/resources'
     private static final String ERROR_TEMPLATE = fileToText("$TEST_RESOURCE_PATH/json_templates/errorResponse.json")
@@ -56,6 +58,10 @@ class TestUtils {
         response
                 .andReturn()
                 .getResolvedException()
+    }
+
+    static String randomWord() {
+        FAKER.lorem().word()
     }
 
 }

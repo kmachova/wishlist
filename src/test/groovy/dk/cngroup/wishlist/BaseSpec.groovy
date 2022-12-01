@@ -1,6 +1,5 @@
 package dk.cngroup.wishlist
 
-import com.github.javafaker.Faker
 import dk.cngroup.wishlist.entity.Client
 import dk.cngroup.wishlist.entity.ClientRepository
 import dk.cngroup.wishlist.entity.Product
@@ -16,6 +15,7 @@ import spock.lang.Specification
 import javax.persistence.EntityManager
 
 import static dk.cngroup.wishlist.TestUtils.responseJsonToString
+import static dk.cngroup.wishlist.TestUtils.FAKER
 
 @Transactional
 @SpringBootTest
@@ -38,7 +38,6 @@ class BaseSpec extends Specification {
     @Autowired
     protected EntityManager entityManager
 
-    protected static final FAKER = new Faker()
     protected static final DEATH_STAR_CODE = 'Death Star'
     protected static final TIE_FIGHTER_CODE = 'TIE Fighter'
     protected static final STAR_DESTROYER_CODE = 'Star Destroyer'

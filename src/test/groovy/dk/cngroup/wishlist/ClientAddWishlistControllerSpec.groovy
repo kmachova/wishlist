@@ -1,7 +1,7 @@
 package dk.cngroup.wishlist
 
 import dk.cngroup.wishlist.exception.ClientUsernameNotFoundException
-import dk.cngroup.wishlist.exception.InvalidCsvLinesExceptionCsvWishesImportException
+import dk.cngroup.wishlist.exception.InvalidCsvLinesException
 import dk.cngroup.wishlist.exception.InvalidProductCodesInFileExceptionCsvWishesImportException
 import dk.cngroup.wishlist.exception.WishlistPublicException
 import org.springframework.http.HttpStatus
@@ -20,6 +20,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import static dk.cngroup.wishlist.TestUtils.pathFromTemplate
 import static dk.cngroup.wishlist.TestUtils.extractException
+import static dk.cngroup.wishlist.TestUtils.randomWord
+import static dk.cngroup.wishlist.TestUtils.FAKER
 
 class ClientAddWishlistControllerSpec extends BaseSpec {
 
@@ -36,6 +38,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
 
     private final minimalCsvFile = mockCsvFile(DEATH_STAR_CODE)
 
+    @SuppressWarnings('LineLength')
     def 'should add wishlist to client: #name'() {
         given:
         clientRepository.save(vader)
@@ -64,14 +67,16 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
                 .isEqualTo(VADER_JSON)
 
         where:
-        name                                    | productInfo
-        'codes only'                            | "$DEATH_STAR_CODE\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE"
-        'colors - skip value for non-existing'  | "$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE"
-        'colors - blank value for non-existing' | "$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE,\t \t \n$TIE_FIGHTER_CODE, "
-        'colors - empty value for non-existing' | "$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE,\n$TIE_FIGHTER_CODE,"
-        'when empty lines are present'          | "\n\n$DEATH_STAR_CODE\n\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE\n"
-        'with quotes'                           | "\"$DEATH_STAR_CODE\",\"black\"\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE"
-        'with quotes and leading whitespaces'   | "\"$DEATH_STAR_CODE\",  \"black\"\n\t\t\t\"$STAR_DESTROYER_CODE\"\n   \"$TIE_FIGHTER_CODE\""
+        name                                       | productInfo
+        'codes only'                               | "$DEATH_STAR_CODE\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE"
+        'colors - skip value for non-existing'     | "$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE"
+        'colors - blank value for non-existing'    | "$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE,\t \t \n$TIE_FIGHTER_CODE, "
+        'colors - empty value for non-existing'    | "$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE,\n$TIE_FIGHTER_CODE,"
+        'when empty lines are present'             | "\n\n$DEATH_STAR_CODE\n\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE\n"
+        'with quotes'                              | "\"$DEATH_STAR_CODE\",\"black\"\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE"
+        'with leading whitespaces'                 | " $DEATH_STAR_CODE,\t \tblack\n\t\t$STAR_DESTROYER_CODE\n\u00A0$TIE_FIGHTER_CODE"
+        'with quotes and leading whitespaces'      | "\"$DEATH_STAR_CODE\",  \"black\"\n\t\t\t\"$STAR_DESTROYER_CODE\"\n   \"$TIE_FIGHTER_CODE\""
+        'with incorrect whitespaces in the middle' | "${DEATH_STAR_CODE.replace(' ', '\t')},black\n${STAR_DESTROYER_CODE.replace(' ', '   ')}\n${TIE_FIGHTER_CODE.replace(' ', '\t\t')}"
     }
 
     def 'should not override existing wishlists'() {
@@ -153,7 +158,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         )
 
         and:
-        extractException(response) instanceof InvalidCsvLinesExceptionCsvWishesImportException
+        extractException(response) instanceof InvalidCsvLinesException
         assertThatJson(extractResponseBody(response))
                 .isEqualTo(expectedError(expectedStatus, INVALID_CSV_MESSAGE, expectedParams))
     }
@@ -179,7 +184,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         )
 
         and:
-        extractException(response) instanceof InvalidCsvLinesExceptionCsvWishesImportException
+        extractException(response) instanceof InvalidCsvLinesException
         assertThatJson(extractResponseBody(response))
                 .isEqualTo(expectedError(expectedStatus, INVALID_CSV_MESSAGE, expectedParams))
 
@@ -254,9 +259,9 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
 
         where:
         name                          | unexactCode
-        'valid code at the beginning' | "$DEATH_STAR_CODE "
-        'valid code at the end'       | " $DEATH_STAR_CODE"
-        'valid code in the middle'    | " $DEATH_STAR_CODE "
+        'valid code at the beginning' | DEATH_STAR_CODE + randomWord()
+        'valid code at the end'       | randomWord() + DEATH_STAR_CODE
+        'valid code in the middle'    | randomWord() + DEATH_STAR_CODE + randomWord()
         'regex'                       | DEATH_STAR_CODE.replace('a', '.')
     }
 
