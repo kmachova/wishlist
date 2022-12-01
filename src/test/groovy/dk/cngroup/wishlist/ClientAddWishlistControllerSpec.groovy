@@ -2,7 +2,7 @@ package dk.cngroup.wishlist
 
 import dk.cngroup.wishlist.exception.ClientUsernameNotFoundException
 import dk.cngroup.wishlist.exception.InvalidCsvLinesException
-import dk.cngroup.wishlist.exception.InvalidProductCodesInFileExceptionCsvWishesImportException
+import dk.cngroup.wishlist.exception.InvalidProductCodesInFileException
 import dk.cngroup.wishlist.exception.WishlistPublicException
 import org.springframework.http.HttpStatus
 import org.springframework.mock.web.MockMultipartFile
@@ -224,7 +224,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         )
 
         and:
-        extractException(response) instanceof InvalidProductCodesInFileExceptionCsvWishesImportException
+        extractException(response) instanceof InvalidProductCodesInFileException
         assertThatJson(extractResponseBody(response))
                 .isEqualTo(expectedError(expectedStatus, NON_EXISTING_PRODUCT_MESSAGE, expectedParams))
     }
@@ -248,7 +248,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         )
 
         and:
-        extractException(response) instanceof InvalidProductCodesInFileExceptionCsvWishesImportException
+        extractException(response) instanceof InvalidProductCodesInFileException
         assertThatJson(extractResponseBody(response))
                 .isEqualTo(expectedError(expectedStatus, NON_EXISTING_PRODUCT_MESSAGE, expectedParams))
 
@@ -293,7 +293,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         )
 
         and:
-        extractException(response) instanceof InvalidProductCodesInFileExceptionCsvWishesImportException
+        extractException(response) instanceof InvalidProductCodesInFileException
         assertThatJson(extractResponseBody(response))
                 .isEqualTo(expectedError(expectedStatus, expectedErrorMessage, expectedParams))
     }

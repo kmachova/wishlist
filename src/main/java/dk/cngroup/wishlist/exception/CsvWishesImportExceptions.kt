@@ -1,6 +1,6 @@
 package dk.cngroup.wishlist.exception
 
-import dk.cngroup.wishlist.service.CsvExceptionBasicInfo
+import dk.cngroup.wishlist.helper.CsvExceptionBasicInfo
 import dk.cngroup.wishlist.service.FailedProduct
 import org.springframework.http.HttpStatus
 
@@ -16,7 +16,7 @@ class InvalidCsvLinesException(exceptions: List<CsvExceptionBasicInfo>) :
         exceptions
     )
 
-class InvalidProductCodesInFileExceptionCsvWishesImportException(failedProducts: List<FailedProduct>) :
+class InvalidProductCodesInFileException(failedProducts: List<FailedProduct>) :
     CsvWishesImportException(
         "Wishlist was not created since some of products specified in the file do not exist.",
         failedProducts

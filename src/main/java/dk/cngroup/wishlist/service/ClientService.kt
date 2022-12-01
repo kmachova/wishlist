@@ -4,18 +4,17 @@ import dk.cngroup.wishlist.exception.ClientUsernameNotFoundException
 import dk.cngroup.wishlist.exception.ProductCodeNotFoundException
 import dk.cngroup.wishlist.entity.Client
 import dk.cngroup.wishlist.entity.ClientRepository
+import dk.cngroup.wishlist.entity.Product
 import dk.cngroup.wishlist.entity.ProductRepository
+import dk.cngroup.wishlist.entity.Wishlist
 import org.springframework.dao.EmptyResultDataAccessException
 import org.springframework.stereotype.Service
-import org.springframework.web.multipart.MultipartFile
-import java.lang.NullPointerException
 import javax.persistence.EntityManager
 
 @Service
 class ClientService(
     private val clientRepository: ClientRepository,
     private val productRepository: ProductRepository,
-    private val readWishlistService: ReadWishlistService,
     private val entityManager: EntityManager
 ) {
     fun getByProductCode(productCode: String): List<Client> {
@@ -24,18 +23,22 @@ class ClientService(
         )
 
         val clients = clientRepository.findDistinctByWishesProductsCodeIgnoreCaseOrderByUserName(productCode)
-            ?.map {
+            .map {
                 entityManager.refresh(it)
-                return@map it
-            } ?: emptyList()
+                it
+            }
         return clients
     }
 
-    fun addWishListFromFileToClient(username: String, csv: MultipartFile): Client {
-        val wishListFromFile = readWishlistService.getWishlistFromCsv(csv)
+    fun addWishlistByUsername(username: String, products: List<Product>): Client {
+        val wishlist = Wishlist(products = products.toMutableList())
+        return addWishlistByUsername(username, wishlist)
+    }
+
+    fun addWishlistByUsername(username: String, wishlist: Wishlist): Client {
         val client = getByUsername(username)
 
-        client.addWishlist(wishListFromFile)
+        client.addWishlist(wishlist)
         clientRepository.save(client)
         client.refreshIfNullUsername()
         return client

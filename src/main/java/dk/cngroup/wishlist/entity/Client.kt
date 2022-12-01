@@ -49,5 +49,5 @@ interface ClientRepository : JpaRepository<Client, Long> {
     fun findClientByUserName(userName: String): Client
 
     @EntityGraph(attributePaths = ["wishes.products"])
-    fun findDistinctByWishesProductsCodeIgnoreCaseOrderByUserName(productCode: String): List<Client>?
+    fun findDistinctByWishesProductsCodeIgnoreCaseOrderByUserName(productCode: String): List<Client>
 }

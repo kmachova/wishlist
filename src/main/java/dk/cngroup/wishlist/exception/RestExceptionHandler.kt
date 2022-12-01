@@ -5,6 +5,7 @@ import mu.KotlinLogging
 import org.springframework.dao.EmptyResultDataAccessException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.MissingRequestValueException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -21,10 +22,14 @@ class RestExceptionHandler {
         return e.message
     }
 
-    @ExceptionHandler(MissingRequestValueException::class, MissingServletRequestPartException::class)
+    @ExceptionHandler(
+        MissingRequestValueException::class,
+        MissingServletRequestPartException::class,
+        MethodArgumentNotValidException::class
+    )
     fun handleMissingRequestValue(e: Exception): ResponseEntity<ErrorBody> {
-        logger.error("Bad request - missing request value", e)
-        val e2 = WishlistPublicException(HttpStatus.BAD_REQUEST, e.message?: "missing request value")
+        logger.error("Bad request", e)
+        val e2 = WishlistPublicException(HttpStatus.BAD_REQUEST, e.message?: "Bad request")
         return handleResponseStatusException(e2)
     }
 
