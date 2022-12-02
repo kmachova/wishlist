@@ -51,6 +51,6 @@ class FetchClientsTest {
 
     @Test
     fun `test search client id by product code`() {
-        clientRepository.findDistinctByWishesProductsCodeIgnoreCaseOrderByUserName(productCode)
+        clientRepository.findClientIdByProductCode(productCode)
     }
 }

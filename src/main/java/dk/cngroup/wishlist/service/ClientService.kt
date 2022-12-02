@@ -14,19 +14,14 @@ import javax.persistence.EntityManager
 @Service
 class ClientService(
     private val clientRepository: ClientRepository,
-    private val productRepository: ProductRepository,
-    private val entityManager: EntityManager
+    private val productRepository: ProductRepository
 ) {
     fun getByProductCode(productCode: String): List<Client> {
         productRepository.findFirstProductByCodeIgnoreCase(productCode) ?: throw ProductCodeNotFoundException(
             productCode
         )
-
-        return clientRepository.findDistinctByWishesProductsCodeIgnoreCaseOrderByUserName(productCode)
-            .map {
-                entityManager.refresh(it)
-                it
-            }
+        val clientId = clientRepository.findClientIdByProductCode(productCode)
+        return clientRepository.findClientByIdIn(clientId)
     }
 
     fun addWishlistByUsername(username: String, products: List<Product>): Client {

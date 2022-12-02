@@ -52,6 +52,7 @@ class ClientSearchControllerSpec extends BaseSpec {
         given:
         vader.addWishlist(wishlist3Products)
         clientRepository.save(vader)
+        clearEntityManager()
 
         when:
         def response = mockMvc.perform(get(CLIENTS_SEARCH_PATH)
@@ -151,6 +152,7 @@ class ClientSearchControllerSpec extends BaseSpec {
         given:
         vader.addWishlist(wishlist1Product)
         clientRepository.save(vader)
+        clearEntityManager()
 
         when:
         def response = mockMvc.perform(get(CLIENTS_SEARCH_PATH)

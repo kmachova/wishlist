@@ -5,6 +5,7 @@ import org.hibernate.annotations.Formula
 import org.hibernate.annotations.Where
 import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
 import org.springframework.data.rest.core.annotation.RestResource
 import javax.persistence.CascadeType
 import javax.persistence.Entity
@@ -49,5 +50,8 @@ interface ClientRepository : JpaRepository<Client, Long> {
     fun findClientByUserName(userName: String): Client
 
     @EntityGraph(attributePaths = ["wishes.products"])
-    fun findDistinctByWishesProductsCodeIgnoreCaseOrderByUserName(productCode: String): List<Client>
+    fun findClientByIdIn(id: List<Long>): List<Client>
+
+    @Query("select c.id from Client c join c.wishes w join w.products p where UPPER(p.code) = UPPER(:productCode)")
+    fun findClientIdByProductCode(productCode: String): List<Long>
 }
