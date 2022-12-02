@@ -8,7 +8,6 @@ import dk.cngroup.wishlist.entity.Product
 import dk.cngroup.wishlist.entity.ProductRepository
 import dk.cngroup.wishlist.entity.Wishlist
 import org.springframework.dao.EmptyResultDataAccessException
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import javax.persistence.EntityManager
 
@@ -23,9 +22,8 @@ class ClientService(
             productCode
         )
 
-        val clientId = clientRepository.findClientIdByProductCode(productCode)
-
-        return clientRepository.findClientByIdIn(clientId)
+        val clientIds = clientRepository.findClientIdByProductCode(productCode)
+        return clientRepository.findClientByIdIn(clientIds)
     }
 
     fun addWishlistByUsername(username: String, products: List<Product>): Client {
