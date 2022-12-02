@@ -70,6 +70,7 @@ class BaseSpec extends Specification {
         skywalker.addWishlist(wishlist1Product)
         clientRepository.saveAll([vader, ren, skywalker])
         productRepository.save(sand)
+        clearEntityManager()
     }
 
     protected void clearEntityManager() {
