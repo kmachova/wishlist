@@ -5,28 +5,23 @@ import org.hibernate.annotations.Formula
 import org.hibernate.annotations.Where
 import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
 import org.springframework.data.rest.core.annotation.RestResource
-import javax.persistence.CascadeType
-import javax.persistence.Entity
-import javax.persistence.GeneratedValue
-import javax.persistence.GenerationType
-import javax.persistence.Id
-import javax.persistence.OneToMany
-import javax.persistence.OrderColumn
+import javax.persistence.*
 
 @Entity //all SELECT statements will be enhanced by given where condition; cannot be inherited from parent class
 @Where(clause = "active = true")
 class Client(
-        @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        var id: Long? = null,
-        var active: Boolean = true,
-        var firstName: String,
-        var lastName: String,
-        @JsonManagedReference
-        @OneToMany(mappedBy = "client", cascade = [CascadeType.ALL])
-        @OrderColumn
-        var wishes: MutableList<Wishlist> = mutableListOf()
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null,
+    var active: Boolean = true,
+    var firstName: String,
+    var lastName: String,
+    @JsonManagedReference
+    @OneToMany(mappedBy = "client", cascade = [CascadeType.ALL])
+    @OrderColumn
+    var wishes: MutableList<Wishlist> = mutableListOf()
 ) {
     @Formula("upper(concat(first_name, '_', last_name))")
     var userName: String? = null
@@ -49,5 +44,8 @@ interface ClientRepository : JpaRepository<Client, Long> {
     fun findClientByUserName(userName: String): Client
 
     @EntityGraph(attributePaths = ["wishes.products"])
-    fun findDistinctByWishesProductsCodeIgnoreCaseOrderByUserName(productCode: String): List<Client>
+    fun findClientByIdIn(id: List<Long>): List<Client>
+
+    @Query("select c.id from Client c join c.wishes w join w.products p where p.code = :productCode")
+    fun findClientIdByProductCode(productCode: String): List<Long>
 }

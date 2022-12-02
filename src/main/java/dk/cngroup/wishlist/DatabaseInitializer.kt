@@ -17,22 +17,12 @@ class DatabaseInitializer(
     private val productRepository: ProductRepository
 ) : CommandLineRunner {
     override fun run(vararg args: String) {
-        val faker = Faker()
-        val nProductsInNoWishList = 5
-        val nClients = 10
-
-        repeat(nProductsInNoWishList) {
-            val product = Product(code = faker.space().star(), color = faker.color().name())
-            productRepository.save(product)
-        }
-
-        repeat(nClients) {
-            val nProducts = (0..10).random()
-            val products = (1..nProducts).map { Product(code = faker.space().planet()) }.toMutableList()
-
-            val client = Client(firstName = faker.address().firstName(), lastName = faker.address().lastName())
-            client.addWishlist(Wishlist(products = products))
-            clientRepository.save(client)
-        }
+        val tieFighter = Product(code = "TIE Fighter")
+        val deathStar = Product(code = "Death Star")
+        val starDestroyer = Product(code = "Star Destroyer")
+        val wishlist = Wishlist(products = arrayListOf(tieFighter, deathStar, starDestroyer))
+        val vader = Client(firstName = "Darth", lastName = "Vader")
+        vader.addWishlist(wishlist)
+        clientRepository.save(vader)
     }
 }

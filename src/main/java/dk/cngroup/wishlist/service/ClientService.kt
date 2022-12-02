@@ -23,16 +23,9 @@ class ClientService(
             productCode
         )
 
-        val clientsWithOneProduct =
-            clientRepository.findDistinctByWishesProductsCodeIgnoreCaseOrderByUserName(productCode)
+        val clientId = clientRepository.findClientIdByProductCode(productCode)
 
-        entityManager.clear()
-
-        val clientsWithAllProducts = clientsWithOneProduct.mapNotNull {
-            val id = it.id
-            clientRepository.findByIdOrNull(id)
-        }
-        return clientsWithAllProducts
+        return clientRepository.findClientByIdIn(clientId)
     }
 
     fun addWishlistByUsername(username: String, products: List<Product>): Client {
