@@ -8,11 +8,12 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 
 //classic Spring MVC controller
+@Validated
 @RestController
 class ProductController(private val repository: ProductRepository) {
 
     @PostMapping("/product")
-    fun saveProduct(@Validated @RequestBody product: Product): Product {
+    fun saveProduct(@RequestBody product: Product): Product {
         return repository.save(product)
     }
 }

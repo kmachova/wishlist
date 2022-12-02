@@ -7,14 +7,21 @@ import com.opencsv.exceptions.CsvException
 import dk.cngroup.wishlist.entity.Product
 import dk.cngroup.wishlist.exception.InvalidCsvLinesException
 import dk.cngroup.wishlist.exception.WishlistPublicException
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import javax.validation.ConstraintViolation
+import javax.validation.ConstraintViolationException
+import javax.validation.Validator
 
 @Service
 class CsvToProductDtoConverter {
+
+    @Autowired
+    lateinit var validator: Validator
 
     companion object {
         const val MAX_COLUMN_NUMBER = 2
@@ -26,6 +33,11 @@ class CsvToProductDtoConverter {
         InputStreamReader(file.inputStream).buffered().use { reader ->
             return csvToProducts(reader)
                 .map { product -> Product(code = product.code.convert(), color = product.color?.convert()) }
+                .map {
+                    val violations: Set<ConstraintViolation<Product>> = validator.validate(it)
+                    if (violations.isEmpty()) it
+                    else throw IllegalArgumentException("HAHAHAHHA")
+                }
         }
     }
 
@@ -55,7 +67,7 @@ class CsvToProductDtoConverter {
             return products else throw InvalidCsvLinesException(exceptions.extractBasicInfo())
     }
 
-    fun List<CsvException>.extractBasicInfo(): List<CsvExceptionBasicInfo> =
+    private fun List<CsvException>.extractBasicInfo(): List<CsvExceptionBasicInfo> =
         this.map {
             CsvExceptionBasicInfo(it.lineNumber, it.message ?: "Unknown")
         }

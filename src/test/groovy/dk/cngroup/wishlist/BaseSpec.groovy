@@ -72,7 +72,7 @@ class BaseSpec extends Specification {
         productRepository.save(sand)
     }
 
-    def clearEntityManager() {
+    protected void clearEntityManager() {
         entityManager.flush()
         entityManager.clear()
     }
