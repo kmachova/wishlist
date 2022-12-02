@@ -1,7 +1,7 @@
 package dk.cngroup.wishlist.exception
 
-import dk.cngroup.wishlist.helper.CsvExceptionBasicInfo
-import dk.cngroup.wishlist.service.FailedProduct
+import com.fasterxml.jackson.annotation.JsonProperty
+import dk.cngroup.wishlist.dto.ProductValidationDto
 import org.springframework.http.HttpStatus
 
 open class CsvWishesImportException(message: String, parameters: List<Any>) : WishlistPublicException(
@@ -16,8 +16,18 @@ class InvalidCsvLinesException(exceptions: List<CsvExceptionBasicInfo>) :
         exceptions
     )
 
-class InvalidProductCodesInFileException(failedProducts: List<FailedProduct>) :
+class InvalidProductsFormFileException(
+    invalidProducts: List<ProductValidationDto>,
+    message: String = "Some products obtained from file are invalid"
+) :
     CsvWishesImportException(
-        "Wishlist was not created since some of products specified in the file do not exist.",
-        failedProducts
+        message,
+        invalidProducts
     )
+
+data class CsvExceptionBasicInfo(
+    @JsonProperty("line")
+    val lineNumber: Long,
+    val cause: String
+)
+

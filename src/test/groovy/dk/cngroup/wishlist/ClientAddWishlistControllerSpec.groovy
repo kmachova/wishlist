@@ -2,7 +2,7 @@ package dk.cngroup.wishlist
 
 import dk.cngroup.wishlist.exception.ClientUsernameNotFoundException
 import dk.cngroup.wishlist.exception.InvalidCsvLinesException
-import dk.cngroup.wishlist.exception.InvalidProductCodesInFileException
+import dk.cngroup.wishlist.exception.InvalidProductsFormFileException
 import dk.cngroup.wishlist.exception.WishlistPublicException
 import org.springframework.http.HttpStatus
 import org.springframework.mock.web.MockMultipartFile
@@ -28,8 +28,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
     private static final FILE_PARAM = 'csv'
     private static final ADD_WISHLIST_TEMPLATE = '/clients/client-management/{username}/addWishlist'
 
-    private static final NON_EXISTING_PRODUCT_MESSAGE =
-            'Wishlist was not created since some of products specified in the file do not exist.'
+    private static final NON_EXISTING_PRODUCT_MESSAGE = 'Some products from file are absent from the database'
 
     private static final INVALID_CSV_MESSAGE = 'Some of csv lines are invalid.'
 
@@ -70,7 +69,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         where:
         name                                       | productInfo
         'codes only'                               | "$DEATH_STAR_CODE\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE"
-        'colors - skip value for non-existing'     | "$DEATH_STAR_CODE,black22\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE"
+        'colors - skip value for non-existing'     | "$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE"
         'colors - blank value for non-existing'    | "$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE,\t \t \n$TIE_FIGHTER_CODE, "
         'colors - empty value for non-existing'    | "$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE,\n$TIE_FIGHTER_CODE,"
         'when empty lines are present'             | "\n\n$DEATH_STAR_CODE\n\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE\n"
@@ -225,7 +224,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         )
 
         and:
-        extractException(response) instanceof InvalidProductCodesInFileException
+        extractException(response) instanceof InvalidProductsFormFileException
         assertThatJson(extractResponseBody(response))
                 .isEqualTo(expectedError(expectedStatus, NON_EXISTING_PRODUCT_MESSAGE, expectedParams))
     }
@@ -249,7 +248,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         )
 
         and:
-        extractException(response) instanceof InvalidProductCodesInFileException
+        extractException(response) instanceof InvalidProductsFormFileException
         assertThatJson(extractResponseBody(response))
                 .isEqualTo(expectedError(expectedStatus, NON_EXISTING_PRODUCT_MESSAGE, expectedParams))
 
@@ -277,8 +276,6 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
 
         and:
         def expectedStatus = HttpStatus.BAD_REQUEST
-        def expectedErrorMessage =
-                'Wishlist was not created since some of products specified in the file do not exist.'
         def expectedParams = getTemplatedList(
                 'line:${line},product:{code:"${code}",color:"${color}"}',
                 [[line: 2, code: DEATH_STAR_CODE, color: starNonMatchingColor], [line: 3, code: TIE_FIGHTER_CODE, color: anyColor]]
@@ -294,9 +291,9 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         )
 
         and:
-        extractException(response) instanceof InvalidProductCodesInFileException
+        extractException(response) instanceof InvalidProductsFormFileException
         assertThatJson(extractResponseBody(response))
-                .isEqualTo(expectedError(expectedStatus, expectedErrorMessage, expectedParams))
+                .isEqualTo(expectedError(expectedStatus, NON_EXISTING_PRODUCT_MESSAGE, expectedParams))
     }
 
     def 'should fail when client does not exist'() {

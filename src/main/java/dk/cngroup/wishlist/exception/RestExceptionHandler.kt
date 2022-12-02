@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.multipart.support.MissingServletRequestPartException
+import javax.validation.ConstraintViolationException
 
 @RestControllerAdvice
 @Slf4j
@@ -25,7 +26,7 @@ class RestExceptionHandler {
     @ExceptionHandler(
         MissingRequestValueException::class,
         MissingServletRequestPartException::class,
-        MethodArgumentNotValidException::class
+        ConstraintViolationException::class
     )
     fun handleMissingRequestValue(e: Exception): ResponseEntity<ErrorBody> {
         logger.error("Bad request", e)
