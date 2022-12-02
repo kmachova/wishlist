@@ -43,6 +43,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         given:
         clientRepository.save(vader)
         productRepository.saveAll([deathStar, starDestroyer, tieFighter])
+        clearEntityManager()
 
         def file = mockCsvFile(productInfo)
 
@@ -69,7 +70,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         where:
         name                                       | productInfo
         'codes only'                               | "$DEATH_STAR_CODE\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE"
-        'colors - skip value for non-existing'     | "$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE"
+        'colors - skip value for non-existing'     | "$DEATH_STAR_CODE,black22\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE"
         'colors - blank value for non-existing'    | "$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE,\t \t \n$TIE_FIGHTER_CODE, "
         'colors - empty value for non-existing'    | "$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE,\n$TIE_FIGHTER_CODE,"
         'when empty lines are present'             | "\n\n$DEATH_STAR_CODE\n\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE\n"

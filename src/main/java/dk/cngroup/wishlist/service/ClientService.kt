@@ -22,12 +22,11 @@ class ClientService(
             productCode
         )
 
-        val clients = clientRepository.findDistinctByWishesProductsCodeIgnoreCaseOrderByUserName(productCode)
+        return clientRepository.findDistinctByWishesProductsCodeIgnoreCaseOrderByUserName(productCode)
             .map {
                 entityManager.refresh(it)
                 it
             }
-        return clients
     }
 
     fun addWishlistByUsername(username: String, products: List<Product>): Client {
@@ -40,7 +39,6 @@ class ClientService(
 
         client.addWishlist(wishlist)
         clientRepository.save(client)
-        client.refreshIfNullUsername()
         return client
     }
 
@@ -53,10 +51,4 @@ class ClientService(
         }
         return client
     }
-
-    private fun Client.refreshIfNullUsername() =
-        this.userName ?: run {
-            clientRepository.flush()
-            entityManager.refresh(this)
-        }
 }

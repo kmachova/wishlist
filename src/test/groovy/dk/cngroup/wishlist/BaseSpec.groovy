@@ -72,6 +72,11 @@ class BaseSpec extends Specification {
         productRepository.save(sand)
     }
 
+    def clearEntityManager() {
+        entityManager.flush()
+        entityManager.clear()
+    }
+
     protected String randomProductCode() {
         FAKER.bothify("non-exist code ${'#'.repeat(10)}${'?'.repeat(10)}${'#'.repeat(10)}")
     }
