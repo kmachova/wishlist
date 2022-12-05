@@ -37,7 +37,6 @@ class ClientService(
         return client
     }
 
-    @Suppress("SwallowedException")
     private fun getByUsername(username: String): Client {
         val client = try {
             clientRepository.findClientByUserName(username)

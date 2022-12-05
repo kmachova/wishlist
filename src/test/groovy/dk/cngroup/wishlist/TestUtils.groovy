@@ -26,9 +26,14 @@ class TestUtils {
         fileToText("$TEST_RESOURCE_PATH/$pathInResources/${fileName}.json")
     }
 
-    static String expectedError(HttpStatus status, String message = '#{json-unit.any-string}', List<String> params = []) {
+    static String expectedError(
+            HttpStatus status,
+            String message = '#{json-unit.any-string}',
+            List<String> params = [],
+            Boolean plainParams = false
+    ) {
         def paramsString = params.size() == 0 ?
-                '' : ",\nparameters:[${params.collect { param -> '\n{' + param + '}' }.join(',')}]"
+                '' : ",\nparameters:[${params.collect { param -> convertParam(param, plainParams) }.join(',')}]"
 
         def bindMap = [
                 status    : status.reasonPhrase,
@@ -37,6 +42,10 @@ class TestUtils {
                 parameters: paramsString
         ]
         getTemplated(ERROR_TEMPLATE, bindMap)
+    }
+
+    private static String convertParam(String param, Boolean plain) {
+        '\n' + (plain ? '"' : '{') + param + (plain ? '"' : '}')
     }
 
     static String getTemplated(String template, Map bindMap) {

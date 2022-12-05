@@ -33,7 +33,7 @@ class ProductValidationService(
                 product = product,
                 messages = violations.map { it.message }
             )
-        }.passIfAllValid("Some products form file are invalid")
+        }.passIfAllValid("Some products from file are invalid")
 
     fun getIfAllExist(productList: List<Product>): List<Product> =
         productList.mapIndexed { index, product ->

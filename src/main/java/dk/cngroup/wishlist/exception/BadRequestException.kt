@@ -3,9 +3,19 @@ package dk.cngroup.wishlist.exception
 import com.fasterxml.jackson.annotation.JsonProperty
 import dk.cngroup.wishlist.dto.ProductValidationDto
 import org.springframework.http.HttpStatus
+import javax.validation.ConstraintViolation
 
-open class CsvWishesImportException(message: String, parameters: List<Any>) : WishlistPublicException(
+open class BadRequestException(message: String, parameters: List<Any> = emptyList()) : WishlistPublicException(
     HttpStatus.BAD_REQUEST,
+    message,
+    parameters
+)
+
+class InvalidProductInBodyException(constraintViolations: Set<ConstraintViolation<*>>) : BadRequestException(
+    "The product in the request body is invalid.", constraintViolations.map { it.message }
+)
+
+open class CsvWishesImportException(message: String, parameters: List<Any>) : BadRequestException(
     message,
     parameters
 )
@@ -30,4 +40,3 @@ data class CsvExceptionBasicInfo(
     val lineNumber: Long,
     val cause: String
 )
-

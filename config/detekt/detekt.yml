@@ -4,3 +4,8 @@ performance:
 style:
   MagicNumber:
     active: false
+exceptions:
+  SwallowedException:
+    ignoredExceptionTypes:
+      - ConstraintViolationException
+      - EmptyResultDataAccessException
