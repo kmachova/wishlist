@@ -53,4 +53,9 @@ class FetchClientsTest {
     fun `test search client id by product code`() {
         clientRepository.findClientIdByProductCode(productCode)
     }
+
+    @Test
+    fun `test list clients with at leas one product`() {
+        clientRepository.findClientsWithAtLeastOneProduct()
+    }
 }

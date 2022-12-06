@@ -8,6 +8,7 @@ plugins {
     kotlin("jvm") version "1.7.20"
     kotlin("plugin.jpa") version "1.7.20"
     kotlin("plugin.spring") version "1.7.20"
+    kotlin("kapt") version "1.7.20"
     groovy
     codenarc
 }
@@ -57,6 +58,8 @@ dependencies {
     testImplementation("org.codehaus.groovy:groovy-templates:2.0.0")
 
     implementation("org.mapstruct:mapstruct:1.5.3.Final")
+    kapt("org.mapstruct:mapstruct-processor:1.5.3.Final")
+
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 }
 

@@ -18,16 +18,16 @@ import javax.persistence.OrderColumn
 @Entity //all SELECT statements will be enhanced by given where condition; cannot be inherited from parent class
 @Where(clause = "active = true")
 class Client(
-        @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        var id: Long? = null,
-        var active: Boolean = true,
-        var firstName: String,
-        var lastName: String,
-        @JsonManagedReference
-        @OneToMany(mappedBy = "client", cascade = [CascadeType.ALL])
-        @OrderColumn
-        var wishes: MutableList<Wishlist> = mutableListOf()
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null,
+    var active: Boolean = true,
+    var firstName: String,
+    var lastName: String,
+    @JsonManagedReference
+    @OneToMany(mappedBy = "client", cascade = [CascadeType.ALL])
+    @OrderColumn
+    var wishes: MutableList<Wishlist> = mutableListOf()
 ) {
     @Formula("upper(concat(first_name, '_', last_name))")
     var userName: String? = null
@@ -52,6 +52,12 @@ interface ClientRepository : JpaRepository<Client, Long> {
     @EntityGraph(attributePaths = ["wishes.products"])
     fun findClientByIdIn(id: List<Long>): List<Client>
 
-    @Query("select c.id from Client c join c.wishes w join w.products p where UPPER(p.code) = UPPER(:productCode)")
+    @EntityGraph(attributePaths = ["wishes.products"])
+    @Query("select c.id from Client c join c.wishes w join w.products p where upper(p.code) = upper(:productCode)")
     fun findClientIdByProductCode(productCode: String): List<Long>
+
+    @EntityGraph(attributePaths = ["wishes.products"])
+    @Query("select c from Client c join c.wishes w join w.products p where p is not empty ")
+    fun findClientsWithAtLeastOneProduct(): List<Client>
+
 }

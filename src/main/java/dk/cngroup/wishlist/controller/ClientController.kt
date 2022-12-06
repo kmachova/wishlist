@@ -12,12 +12,8 @@ import org.springframework.web.bind.annotation.PathVariable
 @RepositoryRestController
 class ClientController(private val repository: ClientRepository) {
 
-    companion object{
-        const val CLIENT_RESOURCE_PATH = "/clients/client-management/{username}"
-    }
-
     //custom method returning loaded entity in Spring HATEOAS way
-    @GetMapping(CLIENT_RESOURCE_PATH)
+    @GetMapping("/clients/client-management/{username}")
     fun getByName(
         @PathVariable username: String,
         resourceAssembler: PersistentEntityResourceAssembler
