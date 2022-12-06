@@ -24,7 +24,6 @@ class ProductControllerSpec extends BaseSpec {
     private static final APPLICATION_JSON = 'application/json'
 
     private static final INVALID_PRODUCT_MESSAGE = 'The product in the request body is invalid.'
-    private static final INVALID_COLOR_ERROR_MESSAGE = 'Color can contain only lowercase letters, dash, comma or space'
     private static final INVALID_CODE_ERROR_MESSAGE = 'Product code can not be blank'
 
     @Shared
@@ -135,7 +134,7 @@ class ProductControllerSpec extends BaseSpec {
         and:
         extractException(response) instanceof InvalidProductInBodyException
         assertThatJson(extractResponseBody(response))
-                .isEqualTo(expectedError(expectedStatus, INVALID_PRODUCT_MESSAGE, [INVALID_COLOR_ERROR_MESSAGE], true))
+                .isEqualTo(expectedError(expectedStatus, INVALID_PRODUCT_MESSAGE, [INVALID_COLOR_MESSAGE], true))
 
         where:
         color <<
@@ -167,7 +166,7 @@ class ProductControllerSpec extends BaseSpec {
                 .isEqualTo(expectedError(
                         expectedStatus,
                         INVALID_PRODUCT_MESSAGE,
-                        [INVALID_CODE_ERROR_MESSAGE, INVALID_COLOR_ERROR_MESSAGE],
+                        [INVALID_CODE_ERROR_MESSAGE, INVALID_COLOR_MESSAGE],
                         true))
     }
 

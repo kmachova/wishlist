@@ -1,5 +1,7 @@
 package dk.cngroup.wishlist
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.github.javafaker.Faker
 import org.springframework.http.HttpStatus
 import org.springframework.test.web.servlet.ResultActions
@@ -8,8 +10,11 @@ import groovy.text.SimpleTemplateEngine
 
 class TestUtils {
 
+    static final OBJECT_MAPPER = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
     static final FAKER = new Faker()
     private static final TEMPLATE_ENGINE = new SimpleTemplateEngine()
+
     private static final String TEST_RESOURCE_PATH = 'src/test/resources'
     private static final String ERROR_TEMPLATE = fileToText("$TEST_RESOURCE_PATH/json_templates/errorResponse.json")
 
@@ -71,6 +76,14 @@ class TestUtils {
 
     static String randomWord() {
         FAKER.lorem().word()
+    }
+
+    static String randomColor() {
+        FAKER.color().name()
+    }
+
+    static String complexColor() {
+        "${randomColor()}-${randomColor()}, ${randomColor()} and ${randomColor()}"
     }
 
 }

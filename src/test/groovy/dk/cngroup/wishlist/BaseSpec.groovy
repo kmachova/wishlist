@@ -41,6 +41,9 @@ class BaseSpec extends Specification {
     protected static final DEATH_STAR_CODE = 'Death Star'
     protected static final TIE_FIGHTER_CODE = 'TIE Fighter'
     protected static final STAR_DESTROYER_CODE = 'Star Destroyer'
+    protected static final DEATH_STAR_COLOR = 'black'
+
+    protected static final INVALID_COLOR_MESSAGE = 'Color can contain only lowercase letters, dash, comma or space'
 
     protected static final VADER_USERNAME = 'DARTH_VADER'
     protected static final VADER_JSON = responseJsonToString('DarthVaderWithWishesAndPlaceHolders')
@@ -52,7 +55,7 @@ class BaseSpec extends Specification {
     }
 
     protected tieFighter = constructProduct(TIE_FIGHTER_CODE)
-    protected deathStar = constructProduct(DEATH_STAR_CODE, 'black')
+    protected deathStar = constructProduct(DEATH_STAR_CODE, DEATH_STAR_COLOR)
     protected starDestroyer = constructProduct(STAR_DESTROYER_CODE)
     private final sand = constructProduct('sand')
 

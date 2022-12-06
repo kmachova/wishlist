@@ -10,6 +10,7 @@ class ClientControllerSpec extends BaseSpec {
     def 'Expected JSON response is created for a valid request'() {
         given:
         clientRepository.save(vader)
+        clearEntityManager()
 
         when:
         def response = mockMvc.perform(get("/clients/client-management/$VADER_USERNAME"))

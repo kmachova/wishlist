@@ -9,9 +9,11 @@ import org.springframework.mock.web.MockMultipartFile
 import org.springframework.web.multipart.support.MissingServletRequestPartException
 import spock.lang.Shared
 
+import static dk.cngroup.wishlist.TestUtils.complexColor
 import static dk.cngroup.wishlist.TestUtils.expectedError
 import static dk.cngroup.wishlist.TestUtils.extractResponseBody
 import static dk.cngroup.wishlist.TestUtils.getTemplatedList
+import static dk.cngroup.wishlist.TestUtils.randomColor
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize
 import static org.hamcrest.text.MatchesPattern.matchesPattern
@@ -31,6 +33,9 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
     private static final NON_EXISTING_PRODUCT_MESSAGE = 'Some products from file are absent from the database'
 
     private static final INVALID_CSV_MESSAGE = 'Some of csv lines are invalid.'
+
+    @Shared
+    private static final COMPLEX_COLOR_WITHOUT_COMMAS = complexColor().replace(',', '-')
 
     @Shared
     private final addWishlistPath = pathFromTemplate(ADD_WISHLIST_TEMPLATE, VADER_USERNAME)
@@ -67,16 +72,65 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
                 .isEqualTo(VADER_JSON)
 
         where:
-        name                                       | productInfo
-        'codes only'                               | "$DEATH_STAR_CODE\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE"
-        'colors - skip value for non-existing'     | "$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE"
-        'colors - blank value for non-existing'    | "$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE,\t \t \n$TIE_FIGHTER_CODE, "
-        'colors - empty value for non-existing'    | "$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE,\n$TIE_FIGHTER_CODE,"
-        'when empty lines are present'             | "\n\n$DEATH_STAR_CODE\n\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE\n"
-        'with quotes'                              | "\"$DEATH_STAR_CODE\",\"black\"\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE"
-        'with leading whitespaces'                 | " $DEATH_STAR_CODE,\t \tblack\n\t\t$STAR_DESTROYER_CODE\n\u00A0$TIE_FIGHTER_CODE"
-        'with quotes and leading whitespaces'      | "\"$DEATH_STAR_CODE\",  \"black\"\n\t\t\t\"$STAR_DESTROYER_CODE\"\n   \"$TIE_FIGHTER_CODE\""
-        'with incorrect whitespaces in the middle' | "${DEATH_STAR_CODE.replace(' ', '\t')},black\n${STAR_DESTROYER_CODE.replace(' ', '   ')}\n${TIE_FIGHTER_CODE.replace(' ', '\t\t')}"
+        name                                               | productInfo
+        'codes only'                                       | "$DEATH_STAR_CODE\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE"
+        'colors - skip value for non-existing'             | "$DEATH_STAR_CODE,$DEATH_STAR_COLOR\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE"
+        'colors - blank value for non-existing'            | "$DEATH_STAR_CODE,$DEATH_STAR_COLOR\n$STAR_DESTROYER_CODE,\t \t \n$TIE_FIGHTER_CODE, "
+        'colors - empty value for non-existing'            | "$DEATH_STAR_CODE,$DEATH_STAR_COLOR\n$STAR_DESTROYER_CODE,\n$TIE_FIGHTER_CODE,"
+        'when empty lines are present'                     | "\n\n$DEATH_STAR_CODE\n\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE\n"
+        'with quotes'                                      | "\"$DEATH_STAR_CODE\",\"$DEATH_STAR_COLOR\"\n$STAR_DESTROYER_CODE\n$TIE_FIGHTER_CODE"
+        'with leading and trailing whitespaces'            | " $DEATH_STAR_CODE,\t \t$DEATH_STAR_COLOR \n\t\t$STAR_DESTROYER_CODE\n\u00A0$TIE_FIGHTER_CODE"
+        'with quotes and leading whitespaces'              | "\"$DEATH_STAR_CODE\",  \"$DEATH_STAR_COLOR\"\n\t\t\t\"$STAR_DESTROYER_CODE\"\n   \"$TIE_FIGHTER_CODE\""
+        'with incorrect whitespaces in the middle of code' | "${DEATH_STAR_CODE.replace(' ', '\t')},$DEATH_STAR_COLOR\n${STAR_DESTROYER_CODE.replace(' ', '   ')}\n${TIE_FIGHTER_CODE.replace(' ', '\t\t')}"
+    }
+
+    def 'should pass with complex color name: #name'() {
+        given:
+        def productCode = randomProductCode()
+
+        def fileContent = "$productCode,$COMPLEX_COLOR_WITHOUT_COMMAS"
+
+        and:
+        productRepository.save(constructProduct(productCode, COMPLEX_COLOR_WITHOUT_COMMAS))
+        clientRepository.save(vader)
+        clearEntityManager()
+
+        when:
+        def response = mockMvc.perform(multipart(addWishlistPath)
+                .file(mockCsvFile(fileContent)))
+
+        then:
+        response
+                .andExpect(status().isOk())
+                .andExpect(jsonPath('$.wishes[0].products[0].code').value(productCode))
+                .andExpect(jsonPath('$.wishes[0].products[0].color').value(COMPLEX_COLOR_WITHOUT_COMMAS))
+
+        where:
+        name                                     | colorRaw
+        'exact'                                  | COMPLEX_COLOR_WITHOUT_COMMAS
+        'with multiple witespaces in the middle' | COMPLEX_COLOR_WITHOUT_COMMAS.replace(' ', '/t /t ')
+    }
+
+    def 'should pass with commas in quoted product properties'() {
+        given:
+        def productCode = "${FAKER.space().galaxy()},${FAKER.space().nebula()}".toString()
+        def color = "${FAKER.color().name()}, ${FAKER.color().name()} and ${FAKER.color().name()}".toString()
+        def fileContent = "\"$productCode\",\"$color\""
+
+        and:
+        productRepository.save(constructProduct(productCode, color))
+        clientRepository.save(vader)
+        clearEntityManager()
+
+        when:
+        def response = mockMvc.perform(multipart(addWishlistPath)
+                .file(mockCsvFile(fileContent)))
+
+        then:
+        response
+                .andExpect(status().isOk())
+                .andExpect(jsonPath('$.wishes[0].products[0].code').value(productCode))
+                .andExpect(jsonPath('$.wishes[0].products[0].color').value(color))
     }
 
     def 'should not override existing wishlists'() {
@@ -84,6 +138,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         vader.addWishlist(wishlist2Products)
         vader.addWishlist(wishlist3Products)
         clientRepository.save(vader)
+        clearEntityManager()
 
         when:
         def response = mockMvc.perform(multipart(addWishlistPath)
@@ -95,36 +150,16 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
                 .andExpect(jsonPath('$.wishes', hasSize(3)))
     }
 
-    def 'should pass with commas in quoted product properties'() {
-        given:
-        def productCode = "${FAKER.space().galaxy()},${FAKER.space().nebula()}".toString()
-        def color = "${FAKER.color().name()}, ${FAKER.color().name()} and ${FAKER.color().name()}".toString()
-
-        productRepository.save(constructProduct(productCode, color))
-        clientRepository.save(vader)
-
-        when:
-        def response = mockMvc.perform(multipart(addWishlistPath)
-                .file(mockCsvFile("\"$productCode\",\"$color\"")))
-
-        then:
-        response
-                .andExpect(status().isOk())
-                .andExpect(jsonPath('$.wishes[0].products[0].code').value(productCode))
-                .andExpect(jsonPath('$.wishes[0].products[0].color').value(color))
-    }
-
     def 'should fail when file with wishes is empty'() {
         given:
         def expectedStatus = HttpStatus.BAD_REQUEST
 
         and:
-        def productCodesCsv =
-                mockCsvFile('')
+        def fileContent = ''
 
         when:
         def response = mockMvc.perform(multipart(addWishlistPath)
-                .file(productCodesCsv))
+                .file(mockCsvFile(fileContent)))
 
         then:
         response.andExpect(
@@ -140,8 +175,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         given:
         def randomColumnsN = 15
         def randomColumns = (0..<randomColumnsN).collect { FAKER.space().starCluster() }.join(',')
-        def productCodesCsv =
-                mockCsvFile("$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE,,\n$TIE_FIGHTER_CODE$randomColumns")
+        def fileContent = "$DEATH_STAR_CODE,black\n$STAR_DESTROYER_CODE,,\n$TIE_FIGHTER_CODE$randomColumns"
 
         and:
         def expectedStatus = HttpStatus.BAD_REQUEST
@@ -150,7 +184,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
 
         when:
         def response = mockMvc.perform(multipart(addWishlistPath)
-                .file(productCodesCsv))
+                .file(mockCsvFile(fileContent)))
 
         then:
         response.andExpect(
@@ -165,9 +199,6 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
 
     def 'should fail when product code is: #name'() {
         given:
-        def productCodesCsv = mockCsvFile(fileContent)
-
-        and:
         def expectedStatus = HttpStatus.BAD_REQUEST
         def expectedParams = getTemplatedList(
                 'cause:"Field \'code\' is mandatory but no value was provided.",line:${line}',
@@ -176,7 +207,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
 
         when:
         def response = mockMvc.perform(multipart(addWishlistPath)
-                .file(productCodesCsv))
+                .file(mockCsvFile(fileContent)))
 
         then:
         response.andExpect(
@@ -194,29 +225,22 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         'blank' | "${randomProductCode()}\n\t,\n${randomProductCode()}\n  \n${randomProductCode()}\n${randomProductCode()}"
     }
 
-    def 'should fail when some of product codes are not found in product repo'() {
+    def 'should fail when color is invalid (#invalidColor)'() {
         given:
-        productRepository.saveAllAndFlush([deathStar, starDestroyer, tieFighter])
-        def nonExistingProductCodes = (0..<2).collect { randomProductCode() }
-
-        def productCodesCsv = mockCsvFile([
-                DEATH_STAR_CODE,
-                TIE_FIGHTER_CODE,
-                nonExistingProductCodes[0],
-                STAR_DESTROYER_CODE,
-                nonExistingProductCodes[1]
-        ].join('\n'))
+        def fileContent =
+                "${randomProductCode()},$invalidColor\n${randomProductCode()}\n${randomProductCode()},$invalidColor"
 
         and:
         def expectedStatus = HttpStatus.BAD_REQUEST
+        def expectedMessage = 'Some products from file are invalid'
         def expectedParams = getTemplatedList(
-                'line:${line},product:{code:"${code}"}',
-                [[line: 3, code: nonExistingProductCodes[0]], [line: 5, code: nonExistingProductCodes[1]]]
+                """"line":\${line},"product":{"code":"#{json-unit.ignore}","color":"$invalidColor"},"messages":["$INVALID_COLOR_MESSAGE\"]""",
+                [[line: 1], [line: 3]]
         )
 
         when:
         def response = mockMvc.perform(multipart(addWishlistPath)
-                .file(productCodesCsv))
+                .file(mockCsvFile(fileContent)))
 
         then:
         response.andExpect(
@@ -226,21 +250,34 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         and:
         extractException(response) instanceof InvalidProductsFormFileException
         assertThatJson(extractResponseBody(response))
-                .isEqualTo(expectedError(expectedStatus, NON_EXISTING_PRODUCT_MESSAGE, expectedParams))
+                .isEqualTo(expectedError(expectedStatus, expectedMessage, expectedParams))
+
+        where:
+        invalidColor <<
+                ["${randomColor()}22", "${randomColor()}_${randomColor()}", "#${randomColor()}", "(${randomColor()})",
+                 "${randomColor().toUpperCase()}", "${randomColor().capitalize()}"]
     }
 
-    def 'should not support partial matches: #name'() {
+    def 'should fail when some of product codes are not found in product repo: including #name'() {
         given:
-        productRepository.saveAndFlush(deathStar)
-        clientRepository.saveAndFlush(vader)
+        def firstNonExistingCode = randomProductCode()
+        def fileContent = "$firstNonExistingCode\n$DEATH_STAR_CODE,$DEATH_STAR_COLOR\n$STAR_DESTROYER_CODE\n" +
+                "$TIE_FIGHTER_CODE\n$secondNonExistingCode"
+
+        and:
+        productRepository.saveAll([deathStar, starDestroyer, tieFighter])
+        clientRepository.save(vader)
+        clearEntityManager()
 
         and:
         def expectedStatus = HttpStatus.BAD_REQUEST
-        def expectedParams = ["line:1,product:{code:'$unexactCode'}"]
+        def expectedParams = getTemplatedList(
+                'line:${line},product:{code:"${code}"}',
+                [[line: 1, code: firstNonExistingCode], [line: 5, code: secondNonExistingCode]])
 
         when:
         def response = mockMvc.perform(multipart(addWishlistPath)
-                .file(mockCsvFile(unexactCode)))
+                .file(mockCsvFile(fileContent)))
 
         then:
         response.andExpect(
@@ -258,21 +295,23 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
                 .andExpect(status().isOk())
 
         where:
-        name                          | unexactCode
+        name                          | secondNonExistingCode
+        'random codes only'           | randomProductCode()
         'valid code at the beginning' | DEATH_STAR_CODE + randomWord()
         'valid code at the end'       | randomWord() + DEATH_STAR_CODE
         'valid code in the middle'    | randomWord() + DEATH_STAR_CODE + randomWord()
-        'regex'                       | DEATH_STAR_CODE.replace('a', '.')
+        'matching regex'              | DEATH_STAR_CODE.replaceFirst('.$', '.*')
     }
 
-    def 'should fail when some of products have non-matching color'() {
+    def 'should fail when some of products have non-matching color: #name'() {
         given:
         productRepository.saveAll([deathStar, starDestroyer, tieFighter])
+        clearEntityManager()
 
         def anyColor = FAKER.color().name()
         def starNonMatchingColor = 'pink'
-        def productCodesCsv = mockCsvFile(
-                "$STAR_DESTROYER_CODE\n$DEATH_STAR_CODE,$starNonMatchingColor\n$TIE_FIGHTER_CODE,$anyColor")
+        def fileContent =
+                "$STAR_DESTROYER_CODE\n$DEATH_STAR_CODE,$starNonMatchingColor\n$TIE_FIGHTER_CODE,$anyColor"
 
         and:
         def expectedStatus = HttpStatus.BAD_REQUEST
@@ -283,7 +322,7 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
 
         when:
         def response = mockMvc.perform(multipart(addWishlistPath)
-                .file(productCodesCsv))
+                .file(mockCsvFile(fileContent)))
 
         then:
         response.andExpect(
@@ -294,11 +333,20 @@ class ClientAddWishlistControllerSpec extends BaseSpec {
         extractException(response) instanceof InvalidProductsFormFileException
         assertThatJson(extractResponseBody(response))
                 .isEqualTo(expectedError(expectedStatus, NON_EXISTING_PRODUCT_MESSAGE, expectedParams))
+
+        where:
+        name                           | invalidColor
+        'simple non-matching color'    | 'pink'
+        'valid color at the beginning' | DEATH_STAR_COLOR + randomWord()
+        'valid color at the end'       | randomWord() + DEATH_STAR_COLOR
+        'valid color in the middle'    | randomWord() + DEATH_STAR_COLOR + randomWord()
+        'matching regex'               | DEATH_STAR_COLOR.replaceFirst('^..', '[a-zA-Z]+')
     }
 
     def 'should fail when client does not exist'() {
         given:
         productRepository.saveAll([deathStar, starDestroyer, tieFighter])
+        clearEntityManager()
 
         def nonExistingUsername = randomUserName()
 
