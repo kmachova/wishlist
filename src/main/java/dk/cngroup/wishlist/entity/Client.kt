@@ -1,6 +1,7 @@
 package dk.cngroup.wishlist.entity
 
 import com.fasterxml.jackson.annotation.JsonManagedReference
+import dk.cngroup.wishlist.dto.ClientProductDto
 import org.hibernate.annotations.Formula
 import org.hibernate.annotations.Where
 import org.springframework.data.jpa.repository.EntityGraph
@@ -52,12 +53,17 @@ interface ClientRepository : JpaRepository<Client, Long> {
     @EntityGraph(attributePaths = ["wishes.products"])
     fun findClientByIdIn(id: List<Long>): List<Client>
 
-    @EntityGraph(attributePaths = ["wishes.products"])
     @Query("select c.id from Client c join c.wishes w join w.products p where upper(p.code) = upper(:productCode)")
     fun findClientIdByProductCode(productCode: String): List<Long>
 
-    @EntityGraph(attributePaths = ["wishes.products"])
-    @Query("select c from Client c join c.wishes w join w.products p where p is not empty ")
-    fun findClientsWithAtLeastOneProduct(): List<Client>
+    //@EntityGraph(attributePaths = ["wishes.products"])
+    @Query(
+        "select distinct new $clientProductDto (p.id, p.code, p.color,c.id, c.firstName, c.lastName) " +
+                "from Client c, Product p inner join c.wishes w inner join w.products where p member of w.products"
+    )
+    fun findAllClientProduct(): List<ClientProductDto>
 
+    companion object {
+        const val clientProductDto = "dk.cngroup.wishlist.dto.ClientProductDto"
+    }
 }

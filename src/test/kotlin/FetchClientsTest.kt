@@ -1,6 +1,7 @@
 package dk.cngroup.wishlist
 
 import com.github.javafaker.Faker
+import dk.cngroup.wishlist.dto.ClientProductDto
 import dk.cngroup.wishlist.entity.Client
 import dk.cngroup.wishlist.entity.ClientRepository
 import org.junit.jupiter.api.BeforeEach
@@ -55,7 +56,9 @@ class FetchClientsTest {
     }
 
     @Test
-    fun `test list clients with at leas one product`() {
-        clientRepository.findClientsWithAtLeastOneProduct()
+    fun `test list clients with at least one product`() {
+        clientRepository.findAllClientProduct()
+            .map { println("ProductId = ${it.productId}, ClientId = ${it.clientId}") }
     }
+
 }
