@@ -3,9 +3,9 @@ package dk.cngroup.wishlist.service
 import dk.cngroup.wishlist.exception.ClientUsernameNotFoundException
 import dk.cngroup.wishlist.exception.ProductCodeNotFoundException
 import dk.cngroup.wishlist.entity.Client
-import dk.cngroup.wishlist.entity.ClientRepository
+import dk.cngroup.wishlist.repository.ClientRepository
 import dk.cngroup.wishlist.entity.Product
-import dk.cngroup.wishlist.entity.ProductRepository
+import dk.cngroup.wishlist.repository.ProductRepository
 import dk.cngroup.wishlist.entity.Wishlist
 import org.springframework.dao.EmptyResultDataAccessException
 import org.springframework.stereotype.Service

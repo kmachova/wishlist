@@ -33,7 +33,3 @@ class Product(
     override
     fun toString(): String = "code=${this.code}, color=${this.color}"
 }
-
-interface ProductRepository : JpaRepository<Product?, Long?> {
-    fun findFirstProductByCodeIgnoreCase(code: String): Product?
-}

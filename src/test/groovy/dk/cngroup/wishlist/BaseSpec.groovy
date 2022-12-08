@@ -1,11 +1,11 @@
 package dk.cngroup.wishlist
 
 import dk.cngroup.wishlist.entity.Client
-import dk.cngroup.wishlist.entity.ClientRepository
+import dk.cngroup.wishlist.repository.ClientRepository
 import dk.cngroup.wishlist.entity.Product
-import dk.cngroup.wishlist.entity.ProductRepository
+import dk.cngroup.wishlist.repository.ProductRepository
 import dk.cngroup.wishlist.entity.Wishlist
-import dk.cngroup.wishlist.entity.WishlistRepository
+import dk.cngroup.wishlist.repository.WishlistRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest

@@ -1,13 +1,13 @@
 package dk.cngroup.wishlist
 
 import com.github.javafaker.Faker
-import dk.cngroup.wishlist.dto.ClientProductDto
 import dk.cngroup.wishlist.entity.Client
-import dk.cngroup.wishlist.entity.ClientRepository
+import dk.cngroup.wishlist.repository.ClientRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.data.domain.PageRequest
 import org.springframework.transaction.annotation.Transactional
 
 @Transactional
@@ -57,8 +57,8 @@ class FetchClientsTest {
 
     @Test
     fun `test list clients with at least one product`() {
-        clientRepository.findAllClientProduct()
-            .map { println("ProductId = ${it.productId}, ClientId = ${it.clientId}") }
+        clientRepository.findAllClientProduct(PageRequest.of(0, 50))
+            .mapIndexed {i, dto -> println("$i: ProductId = ${dto.productId}, ClientId = ${dto.clientId}") }
     }
 
 }

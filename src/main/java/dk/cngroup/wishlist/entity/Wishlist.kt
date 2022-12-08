@@ -29,4 +29,3 @@ class Wishlist(
     var products: MutableList<Product> = arrayListOf()
 )
 
-interface WishlistRepository : JpaRepository<Wishlist?, Long?>

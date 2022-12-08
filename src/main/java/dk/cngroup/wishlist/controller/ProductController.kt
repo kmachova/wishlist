@@ -1,7 +1,7 @@
 package dk.cngroup.wishlist.controller
 
 import dk.cngroup.wishlist.entity.Product
-import dk.cngroup.wishlist.entity.ProductRepository
+import dk.cngroup.wishlist.repository.ProductRepository
 import dk.cngroup.wishlist.exception.InvalidProductInBodyException
 import dk.cngroup.wishlist.helper.covertInputValues
 import org.springframework.validation.annotation.Validated

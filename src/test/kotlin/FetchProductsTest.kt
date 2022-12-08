@@ -1,6 +1,6 @@
 package dk.cngroup.wishlist
 
-import dk.cngroup.wishlist.entity.ProductRepository
+import dk.cngroup.wishlist.repository.ProductRepository
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest

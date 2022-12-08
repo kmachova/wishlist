@@ -2,7 +2,7 @@ package dk.cngroup.wishlist.service
 
 import dk.cngroup.wishlist.dto.ProductValidationDto
 import dk.cngroup.wishlist.entity.Product
-import dk.cngroup.wishlist.entity.ProductRepository
+import dk.cngroup.wishlist.repository.ProductRepository
 import dk.cngroup.wishlist.exception.InvalidProductsFormFileException
 import org.springframework.data.domain.Example
 import org.springframework.data.domain.ExampleMatcher

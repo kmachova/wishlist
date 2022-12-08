@@ -2,9 +2,9 @@ package dk.cngroup.wishlist
 
 import com.github.javafaker.Faker
 import dk.cngroup.wishlist.entity.Client
-import dk.cngroup.wishlist.entity.ClientRepository
+import dk.cngroup.wishlist.repository.ClientRepository
 import dk.cngroup.wishlist.entity.Product
-import dk.cngroup.wishlist.entity.ProductRepository
+import dk.cngroup.wishlist.repository.ProductRepository
 import dk.cngroup.wishlist.entity.Wishlist
 import lombok.RequiredArgsConstructor
 import org.springframework.boot.CommandLineRunner
