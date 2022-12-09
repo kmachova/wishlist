@@ -26,7 +26,6 @@ interface ClientRepository : JpaRepository<Client, Long> {
     @Query("select c.id from Client c join c.wishes w join w.products p where upper(p.code) = upper(:productCode)")
     fun findClientIdByProductCode(productCode: String): List<Long>
 
-    //@EntityGraph(attributePaths = ["wishes.products"])
     @Query(
         "select distinct new $clientProductDto (p.id, p.code, p.color,c.id, c.firstName, c.lastName) " +
                 "from Client c, Product p inner join c.wishes w inner join w.products where p member of w.products"
