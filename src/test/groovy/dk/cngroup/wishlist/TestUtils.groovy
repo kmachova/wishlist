@@ -13,6 +13,7 @@ class TestUtils {
     static final OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
     static final FAKER = new Faker()
+    static final RANDOM = new Random()
     private static final TEMPLATE_ENGINE = new SimpleTemplateEngine()
 
     private static final String TEST_RESOURCE_PATH = 'src/test/resources'

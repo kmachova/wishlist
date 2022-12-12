@@ -11,6 +11,11 @@ open class BadRequestException(message: String, parameters: List<Any> = emptyLis
     parameters
 )
 
+class InvalidSorByException(invalidValues: List<String>, allowedValues: List<String>) : BadRequestException(
+    "Result can not be sort by following properties: ${invalidValues.map { "'$it'" }}. " +
+            "Allowed are ${allowedValues.map { "'$it'" }}."
+)
+
 class InvalidProductInBodyException(constraintViolations: Set<ConstraintViolation<*>>) : BadRequestException(
     "The product in the request body is invalid.", constraintViolations.map { it.message }
 )

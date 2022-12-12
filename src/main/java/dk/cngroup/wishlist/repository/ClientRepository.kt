@@ -28,7 +28,7 @@ interface ClientRepository : JpaRepository<Client, Long> {
 
     @Query(
         "select distinct new $clientProductDto (p.id, p.code, p.color,c.id, c.firstName, c.lastName) " +
-                "from Client c, Product p inner join c.wishes w inner join w.products where p member of w.products"
+                "from Client c join c.wishes w join w.products p"
     )
     fun findAllClientProduct(pageable: Pageable): Page<ClientProductDto>
 
