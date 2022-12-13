@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder
 class ClientProductDto(
     val productId: Long,
     val productCode: String,
-    val productColor: String,
+    val productColor: String?,
 
     val clientId: Long,
     val firstName: String,

@@ -104,7 +104,7 @@ ruleset {
     ParameterReassignment
     // PublicMethodsBeforeNonPublicMethods
     StaticFieldsBeforeInstanceFields
-    StaticMethodsBeforeInstanceMethods
+    StaticMethodsBeforeInstanceMethods(doNotApplyToClassNames:'*ControllerSpec')
     TernaryCouldBeElvis
     VectorIsObsolete
 

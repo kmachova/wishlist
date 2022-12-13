@@ -19,7 +19,7 @@ class ClientProductController(
 
     @GetMapping("/clients_products")
     fun getAllClientProductCombinations(
-        @PageableDefault(size = 5) pageable: Pageable,
+        @PageableDefault(size = 5, sort = ["id"]) pageable: Pageable,
         pagedResourcesAssembler: PagedResourcesAssembler<ClientProductDto>
     ): PagedModel<EntityModel<ClientProductDto>> {
         service.validateSort(pageable.sort)
@@ -28,4 +28,3 @@ class ClientProductController(
     }
 
 }
-
