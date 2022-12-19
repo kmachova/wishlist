@@ -13,7 +13,7 @@ spec:
         app: wishlist
     spec:
       containers:
-        - image: local/wishlist:1
+        - image: wishlistkamila.azurecr.io/wishlist:latest
           securityContext:
             allowPrivilegeEscalation:
               false
