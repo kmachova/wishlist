@@ -30,7 +30,7 @@ class ClientSearchIntegrationSpec extends Specification {
     @Transactional
     def 'Expected JSON response is created for a valid request'() {
         given:
-        def wishes = new Wishlist(products: [new Product(code: 'Sith Infiltrator')])
+        def wishes = new Wishlist(products: [new Product(code: 67)])
         def maul = new Client(active: true, firstName: 'Darth', lastName: 'Maul', wishes: [wishes])
         clientRepository.saveAndFlush(maul)
 

@@ -1,0 +1,6 @@
+style:
+  NewLineAtEndOfFile:
+    active: false
+  WildcardImport:
+    excludeImports: ['java.util.*', 'jakarta.persistence.*']
+

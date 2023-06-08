@@ -1,7 +1,8 @@
 import org.springframework.boot.gradle.tasks.bundling.BootJar
+import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
-    val kotlinPluginVersion = "1.8.10"
+    val kotlinPluginVersion = "1.8.21"
 
     id("org.springframework.boot") version "3.0.5"
     id("io.spring.dependency-management") version "1.1.0"
@@ -9,6 +10,10 @@ plugins {
     kotlin("plugin.jpa") version kotlinPluginVersion
     kotlin("plugin.spring") version kotlinPluginVersion
     groovy
+
+    id("io.gitlab.arturbosch.detekt") version ("1.22.0")
+    codenarc
+    id("org.jlleitschuh.gradle.ktlint") version "10.3.0"
 }
 
 group = "dk.cngroup.wishlist"
@@ -38,7 +43,7 @@ dependencies {
 
     // dependencies for using Spock
     testImplementation("org.spockframework:spock-spring:2.4-M1-groovy-4.0")
-    testImplementation("org.hamcrest:hamcrest-core:2.2")   // only necessary if Hamcrest matchers are used
+    testImplementation("org.hamcrest:hamcrest-core:2.2") // only necessary if Hamcrest matchers are used
     testRuntimeOnly("net.bytebuddy:byte-buddy:1.12.23") // allows mocking of classes (in addition to interfaces)
 }
 
@@ -63,3 +68,21 @@ tasks.named<BootJar>("bootJar") {
 tasks.withType<Test> {
     useJUnitPlatform()
 }
+
+codenarc {
+    toolVersion = "3.1.0"
+    configFile = file("${rootProject.projectDir}/config/codenarc/ruleset")
+    reportFormat = "html"
+}
+
+detekt {
+    config = files("${rootProject.projectDir}/config/detekt/detekt.yml")
+    buildUponDefaultConfig = true
+}
+
+configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
+
+    ignoreFailures.set(false)
+    //disabledRules.set(setOf("no-wildcard-imports"))
+}
+

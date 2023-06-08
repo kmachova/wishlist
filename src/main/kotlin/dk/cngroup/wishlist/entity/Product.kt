@@ -7,9 +7,10 @@ import jakarta.validation.constraints.NotNull
 
 @Entity
 class Product(
-    @Description("Unique name of the item")
+    @Description
+        ("Unique name of the item")
     @field:NotNull
-    var code: String
+    var code: Int
 ) : AuditableEntity()
 
 interface ProductRepository : JpaRepository<Product?, Long?>
